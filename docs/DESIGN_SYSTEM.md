@@ -64,3 +64,4 @@ Aston Campus adopte une identité visuelle **SaaS Premium 2026** :
    - Ratio de contraste texte/fond minimal de 4.5:1 sur tous les éléments informatifs.
    - Anneau de focus visible `focus-visible:ring-2 focus-visible:ring-indigo-500` pour navigation intégrale au clavier.
    - Rôles ARIA et libellés explicites sur tous les boutons d'action.
+

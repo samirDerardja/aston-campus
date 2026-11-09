@@ -109,3 +109,4 @@ npm run build
 - **Conformité RGPD & Vie Privée** : Aucune donnée médicale, disciplinaire ou confidentielle non autorisée n'est stockée sur les fiches apprenants.
 - **Immutabilité Nevea** : Les séances issues de Nevea portent le statut `nevea_readonly` et sont formellement rejetées en modification (`403 Forbidden - ASTON_ERR_READONLY`).
 - **Stockage Documentaire** : Les documents sont hébergés dans des buckets privés Supabase avec génération d'URLs signées à durée déterminée.
+

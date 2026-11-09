@@ -12,6 +12,9 @@ import {
 interface AppContextType {
   currentUser: UserProfile;
   switchRole: (role: UserProfile['role']) => void;
+  isAuthenticated: boolean;
+  login: (role: UserRole) => void;
+  logout: () => void;
   isDemoMode: boolean;
   promotions: Promotion[];
   students: Student[];
@@ -71,8 +74,30 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<UserProfile>(CURRENT_USER);
-  const [isDemoMode] = useState<boolean>(true);
+  // Authentification
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+
+  const login = (role: UserRole) => {
+    switchRole(role);
+    setIsAuthenticated(true);
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+  };
+
+  // Filtrage strict par rôle (Cloisonnement formateur)
+  const accessiblePromotions = currentUser.role === 'formateur'
+    ? promotions.filter(p => p.referentTrainerId === 'tr-01' || p.id === 'promo-1' || p.id === 'promo-2')
+    : promotions;
+
+  const accessibleStudents = currentUser.role === 'formateur'
+    ? students.filter(s => accessiblePromotions.some(p => p.id === s.promotionId))
+    : students;
+
+  const accessibleActions = currentUser.role === 'formateur'
+    ? actions.filter(a => a.assigneeId === 'tr-01' || accessiblePromotions.some(p => p.id === a.promotionId))
+    : actions;
   
   const [promotions, setPromotions] = useState<Promotion[]>(() => {
     const saved = localStorage.getItem('aston_promotions');
@@ -333,14 +358,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       currentUser,
       switchRole,
+      isAuthenticated,
+      login,
+      logout,
       isDemoMode,
-      promotions,
-      students,
+      promotions: accessiblePromotions,
+      students: accessibleStudents,
       trainers,
       events,
       interviews,
       meetings,
-      actions,
+      actions: accessibleActions,
       documents,
       notifications,
       unreadNotificationsCount,
@@ -364,3 +392,4 @@ export const useApp = () => {
   if (!context) throw new Error('useApp must be used within an AppProvider');
   return context;
 };
+

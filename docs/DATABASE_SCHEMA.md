@@ -277,3 +277,4 @@ CREATE TYPE notification_type AS ENUM ('action_assigned', 'due_date_warning', 'a
     - `resource_id UUID`
     - `payload_diff JSONB`
     - `created_at TIMESTAMPTZ DEFAULT NOW()`
+

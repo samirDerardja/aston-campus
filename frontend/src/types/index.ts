@@ -190,3 +190,4 @@ export interface AppNotification {
   isRead: boolean;
   createdAt: string;
 }
+

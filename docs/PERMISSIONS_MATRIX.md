@@ -85,3 +85,4 @@ CREATE POLICY "Prevent modification of Nevea readonly sessions"
 ON sessions FOR UPDATE
 USING (source_type != 'nevea_readonly' AND is_readonly = false);
 ```
+

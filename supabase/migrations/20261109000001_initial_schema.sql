@@ -395,3 +395,4 @@ CREATE TRIGGER trg_promotions_updated_at BEFORE UPDATE ON promotions FOR EACH RO
 
 DROP TRIGGER IF EXISTS trg_action_items_updated_at ON action_items;
 CREATE TRIGGER trg_action_items_updated_at BEFORE UPDATE ON action_items FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+

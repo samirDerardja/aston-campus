@@ -112,3 +112,4 @@ export const ReportingPage: React.FC = () => {
     </div>
   );
 };
+

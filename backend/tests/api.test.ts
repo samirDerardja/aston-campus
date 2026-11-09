@@ -50,3 +50,4 @@ test('Backend Aston Campus - Test Suite', async (t) => {
     assert.strictEqual(body.code, 'ASTON_ERR_VALIDATION');
   });
 });
+

@@ -77,3 +77,4 @@ Elle fonctionne en complémentarité avec Nevea (ERP administratif et de planifi
 - **Authentification** : Supabase Auth (`auth.users`) mappé 1:1 à `public.profiles`.
 - **Politiques RLS** : Définies sur chaque table pour garantir que même en cas de requête directe depuis le client Supabase, aucun formateur ne puisse inspecter des dossiers non affectés.
 - **Migrations SQL** : Versionnées sous `supabase/migrations/` avec structure idempotente et reproductible.
+

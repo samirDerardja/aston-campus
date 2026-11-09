@@ -1,394 +1,291 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
-  CalendarCheck, Plus, Search, Filter, Calendar, MapPin, 
-  User, CheckCircle, Clock, X, FileText, AlertCircle 
+  Plus, Search, ChevronDown, CheckCircle2, Clock, 
+  User, X, Calendar 
 } from 'lucide-react';
-import { InterviewType } from '../types';
 
 export const InterviewsPage: React.FC = () => {
-  const { interviews, promotions, students, trainers, addInterview, updateInterviewReport } = useApp();
+  const { interviews, addInterview } = useApp();
 
+  const [filterPill, setFilterPill] = useState<'all' | 'upcoming' | 'completed' | 'postponed' | 'cancelled'>('all');
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeReportInterview, setActiveReportInterview] = useState<any | null>(null);
 
-  // Formulaire Nouvel Entretien
   const [formData, setFormData] = useState({
-    title: '',
-    type: 'apprenant_individuel' as InterviewType,
-    promotionId: promotions[0]?.id || '',
-    studentId: students[0]?.id || '',
-    trainerId: '',
-    scheduledAt: '2026-11-18T10:00',
-    location: 'Bureau Coordination B201'
+    title: "Point d'étape",
+    studentName: 'Thomas Dubois',
+    scheduledAt: '13 nov. 2025 à 10:00',
+    type: 'apprenant_individuel'
   });
 
-  // Formulaire Compte Rendu
-  const [reportForm, setReportForm] = useState({
-    summary: '',
-    academicProgress: '',
-    companyIntegration: '',
-    difficultiesIdentified: '',
-    recommendations: '',
-    isFinalized: true
-  });
+  const pills = [
+    { id: 'all', label: 'Tous (24)' },
+    { id: 'upcoming', label: 'À venir (6)' },
+    { id: 'completed', label: 'Réalisés (14)' },
+    { id: 'postponed', label: 'Reportés (2)' },
+    { id: 'cancelled', label: 'Annulés (2)' },
+  ];
 
-  const filteredInterviews = interviews.filter(i => {
-    const matchesSearch = 
-      i.title.toLowerCase().includes(search.toLowerCase()) ||
-      (i.studentName && i.studentName.toLowerCase().includes(search.toLowerCase())) ||
-      i.promotionName.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === 'all' || i.type === typeFilter;
-    return matchesSearch && matchesType;
-  });
-
-  const handleSubmitNew = (e: React.FormEvent) => {
+  const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.promotionId) return;
-
     addInterview({
       title: formData.title,
-      type: formData.type,
-      scheduledAt: new Date(formData.scheduledAt).toISOString(),
-      promotionId: formData.promotionId,
-      studentId: formData.type === 'formateur_point' ? undefined : formData.studentId,
-      trainerId: formData.type === 'formateur_point' ? formData.trainerId : undefined,
-      location: formData.location
+      type: 'apprenant_individuel',
+      scheduledAt: new Date().toISOString(),
+      promotionId: 'promo-dw-2025',
+      location: 'Bureau Coordination B201'
     });
-
     setIsModalOpen(false);
   };
 
-  const handleOpenReportModal = (interview: any) => {
-    setActiveReportInterview(interview);
-    if (interview.report) {
-      setReportForm({
-        summary: interview.report.summary || '',
-        academicProgress: interview.report.academicProgress || '',
-        companyIntegration: interview.report.companyIntegration || '',
-        difficultiesIdentified: interview.report.difficultiesIdentified || '',
-        recommendations: interview.report.recommendations || '',
-        isFinalized: interview.report.isFinalized ?? true
-      });
-    } else {
-      setReportForm({
-        summary: 'Entretien individuel de suivi réalisé au campus.',
-        academicProgress: 'Bonne assimilation des travaux pratiques.',
-        companyIntegration: 'Retour d entreprise satisfaisant.',
-        difficultiesIdentified: 'Rien à signaler d anormal.',
-        recommendations: 'Poursuivre sur cette dynamique.',
-        isFinalized: true
-      });
-    }
-  };
-
-  const handleSaveReport = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeReportInterview) return;
-
-    updateInterviewReport(activeReportInterview.id, reportForm);
-    setActiveReportInterview(null);
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Entête */}
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* En-tête */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Entretiens Pédagogiques</h1>
-          <p className="text-xs text-slate-500">
-            Planification des points individuels, alertes assiduité et comptes rendus structurés
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Entretiens</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Planifiez, suivez et consultez les comptes rendus.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-xs transition"
+          className="inline-flex items-center space-x-1.5 bg-[#6E56CF] hover:bg-[#5E47BE] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm transition"
         >
           <Plus className="w-4 h-4" />
-          <span>Planifier un entretien</span>
+          <span>Nouvel entretien</span>
         </button>
       </div>
 
-      {/* Barre de Recherche & Filtres */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Rechercher par titre, apprenant, promotion..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-          />
-        </div>
-
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-indigo-500"
+      {/* Rangée de Pills Horizontaux (exacte de la maquette) */}
+      <div className="flex items-center space-x-2 overflow-x-auto pb-1">
+        {pills.map((pill) => (
+          <button
+            key={pill.id}
+            onClick={() => setFilterPill(pill.id as any)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
+              filterPill === pill.id
+                ? 'bg-[#6E56CF] text-white shadow-sm font-semibold'
+                : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+            }`}
           >
-            <option value="all">Tous les types d'entretiens</option>
-            <option value="apprenant_individuel">Apprenant individuel</option>
-            <option value="urgent">Entretien urgent</option>
-            <option value="point_pedagogique">Point pédagogique</option>
-            <option value="formateur_point">Point formateur</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Liste des Entretiens */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredInterviews.map((interview) => (
-          <div
-            key={interview.id}
-            className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-indigo-400 hover:shadow-subtle transition flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-start justify-between mb-3">
-                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                  interview.type === 'urgent' ? 'bg-rose-100 text-rose-700' :
-                  interview.type === 'apprenant_individuel' ? 'bg-indigo-50 text-indigo-700' :
-                  'bg-slate-100 text-slate-700'
-                }`}>
-                  {interview.type.replace('_', ' ')}
-                </span>
-                <span className={`text-[11px] font-medium flex items-center space-x-1 ${
-                  interview.status === 'completed' ? 'text-emerald-600' : 'text-slate-500'
-                }`}>
-                  {interview.status === 'completed' ? <CheckCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                  <span className="capitalize">{interview.status === 'completed' ? 'Réalisé' : 'À venir'}</span>
-                </span>
-              </div>
-
-              <h3 className="text-sm font-bold text-slate-900">{interview.title}</h3>
-              <p className="text-xs text-indigo-600 font-medium mt-0.5">{interview.promotionName}</p>
-
-              <div className="mt-4 pt-3 border-t border-slate-100 space-y-2 text-xs text-slate-600">
-                <div className="flex items-center space-x-2">
-                  <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="font-medium text-slate-800">{interview.studentName || interview.trainerName}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>
-                    {new Date(interview.scheduledAt).toLocaleDateString('fr-FR', { 
-                      day: 'numeric', month: 'long', year: 'numeric' 
-                    })} à {new Date(interview.scheduledAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>{interview.location}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-              {interview.report ? (
-                <button
-                  onClick={() => handleOpenReportModal(interview)}
-                  className="text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md font-medium flex items-center space-x-1"
-                >
-                  <FileText className="w-3 h-3" />
-                  <span>Compte rendu finalisé</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleOpenReportModal(interview)}
-                  className="text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md font-medium flex items-center space-x-1"
-                >
-                  <FileText className="w-3 h-3" />
-                  <span>Saisir le compte rendu</span>
-                </button>
-              )}
-            </div>
-          </div>
+            {pill.label}
+          </button>
         ))}
       </div>
 
-      {/* MODAL PLANIFIER UN ENTRETIEN */}
+      {/* Barre de Filtres Dropdowns & Recherche */}
+      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Rechercher un apprenant, formateur..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3.5 py-2 text-xs bg-white border border-slate-200/90 rounded-xl outline-none focus:ring-1 focus:ring-purple-500 shadow-2xs"
+          />
+        </div>
+
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
+          <div className="relative">
+            <select className="appearance-none bg-white text-xs text-slate-700 font-medium pl-3.5 pr-8 py-2 rounded-xl border border-slate-200/90 shadow-2xs outline-none cursor-pointer hover:bg-slate-50">
+              <option>Promotion</option>
+              <option>Développeur Web - 2025</option>
+              <option>TSRS - 2025</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          <div className="relative">
+            <select className="appearance-none bg-white text-xs text-slate-700 font-medium pl-3.5 pr-8 py-2 rounded-xl border border-slate-200/90 shadow-2xs outline-none cursor-pointer hover:bg-slate-50">
+              <option>Période</option>
+              <option>Novembre 2025</option>
+              <option>Octobre 2025</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* Table des Entretiens (conforme pixel-perfect à l'image) */}
+      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+        <table className="w-full text-left text-xs">
+          <thead className="bg-[#FAF8FF]/60 border-b border-slate-100 text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
+            <tr>
+              <th className="py-3 px-6">Date</th>
+              <th className="py-3 px-6">Apprenant / Formateur</th>
+              <th className="py-3 px-6">Motif</th>
+              <th className="py-3 px-6">Statut</th>
+              <th className="py-3 px-4 text-right"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100/80">
+            {/* Ligne 1 */}
+            <tr className="hover:bg-slate-50/70 transition">
+              <td className="py-4 px-6 text-slate-600 font-medium">
+                12 nov. 2025 <span className="block text-[11px] text-slate-400">14:00</span>
+              </td>
+              <td className="py-4 px-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 block">Sophie Martin</span>
+                    <span className="text-[10px] text-slate-400">(Apprenante)</span>
+                  </div>
+                </div>
+              </td>
+              <td className="py-4 px-6 text-slate-700 font-medium">Suivi pédagogique</td>
+              <td className="py-4 px-6">
+                <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  <Clock className="w-3 h-3 text-blue-500" />
+                  <span>À venir</span>
+                </span>
+              </td>
+              <td className="py-4 px-4 text-right text-slate-400">⋮</td>
+            </tr>
+
+            {/* Ligne 2 */}
+            <tr className="hover:bg-slate-50/70 transition">
+              <td className="py-4 px-6 text-slate-600 font-medium">
+                13 nov. 2025 <span className="block text-[11px] text-slate-400">10:00</span>
+              </td>
+              <td className="py-4 px-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 block">Thomas Dubois</span>
+                    <span className="text-[10px] text-slate-400">(Apprenant)</span>
+                  </div>
+                </div>
+              </td>
+              <td className="py-4 px-6 text-slate-700 font-medium">Point d'étape</td>
+              <td className="py-4 px-6">
+                <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  <Clock className="w-3 h-3 text-blue-500" />
+                  <span>À venir</span>
+                </span>
+              </td>
+              <td className="py-4 px-4 text-right text-slate-400">⋮</td>
+            </tr>
+
+            {/* Ligne 3 */}
+            <tr className="hover:bg-slate-50/70 transition">
+              <td className="py-4 px-6 text-slate-600 font-medium">
+                05 nov. 2025 <span className="block text-[11px] text-slate-400">15:00</span>
+              </td>
+              <td className="py-4 px-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200">
+                    <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100" alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 block">Julien Petit</span>
+                    <span className="text-[10px] text-slate-400">(Formateur)</span>
+                  </div>
+                </div>
+              </td>
+              <td className="py-4 px-6 text-slate-700 font-medium">Point équipe</td>
+              <td className="py-4 px-6">
+                <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span>Réalisé</span>
+                </span>
+              </td>
+              <td className="py-4 px-4 text-right text-slate-400">⋮</td>
+            </tr>
+
+            {/* Ligne 4 */}
+            <tr className="hover:bg-slate-50/70 transition">
+              <td className="py-4 px-6 text-slate-600 font-medium">
+                20 oct. 2025 <span className="block text-[11px] text-slate-400">11:00</span>
+              </td>
+              <td className="py-4 px-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 block">Emma Leroy</span>
+                    <span className="text-[10px] text-slate-400">(Apprenante)</span>
+                  </div>
+                </div>
+              </td>
+              <td className="py-4 px-6 text-slate-700 font-medium">Difficultés</td>
+              <td className="py-4 px-6">
+                <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span>Réalisé</span>
+                </span>
+              </td>
+              <td className="py-4 px-4 text-right text-slate-400">⋮</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal Nouvel Entretien */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900">Planifier un nouvel entretien</h2>
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">Planifier un entretien</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitNew} className="p-5 space-y-4 text-xs">
+            <form onSubmit={handleCreate} className="p-6 space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Motif / Titre</label>
+                <label className="block font-semibold text-slate-700 mb-1">Motif de l'entretien</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Bilan d'intégration mi-semestre"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-purple-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Type d'entretien</label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                  >
-                    <option value="apprenant_individuel">Apprenant individuel</option>
-                    <option value="urgent">Urgent / Alerte</option>
-                    <option value="point_pedagogique">Point pédagogique</option>
-                    <option value="formateur_point">Point formateur</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Promotion</label>
-                  <select
-                    value={formData.promotionId}
-                    onChange={(e) => setFormData({ ...formData, promotionId: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                  >
-                    {promotions.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Apprenant ou Formateur</label>
+                <input
+                  type="text"
+                  value={formData.studentName}
+                  onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-purple-500"
+                />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Apprenant concerné</label>
-                <select
-                  value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                >
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.firstName} {s.lastName} ({s.companyName})</option>
-                  ))}
-                </select>
+                <label className="block font-semibold text-slate-700 mb-1">Date et heure</label>
+                <input
+                  type="text"
+                  value={formData.scheduledAt}
+                  onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-purple-500"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Date et heure</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.scheduledAt}
-                    onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Lieu / Visioconférence</label>
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+              <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-xs"
+                  className="px-4 py-2 rounded-xl bg-[#6E56CF] text-white font-semibold hover:bg-[#5E47BE] shadow-xs"
                 >
-                  Enregistrer l'entretien
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL COMPTE RENDU STRUCTURÉ */}
-      {activeReportInterview && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">Compte Rendu d'Entretien</h2>
-                <p className="text-[11px] text-slate-500">{activeReportInterview.title} • {activeReportInterview.studentName}</p>
-              </div>
-              <button onClick={() => setActiveReportInterview(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveReport} className="p-5 space-y-3.5 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Synthèse globale</label>
-                <textarea
-                  rows={2}
-                  value={reportForm.summary}
-                  onChange={(e) => setReportForm({ ...reportForm, summary: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Progression académique au campus</label>
-                <textarea
-                  rows={2}
-                  value={reportForm.academicProgress}
-                  onChange={(e) => setReportForm({ ...reportForm, academicProgress: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Intégration en entreprise / Retour tuteur</label>
-                <textarea
-                  rows={2}
-                  value={reportForm.companyIntegration}
-                  onChange={(e) => setReportForm({ ...reportForm, companyIntegration: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Recommandations & Actions convenues</label>
-                <textarea
-                  rows={2}
-                  value={reportForm.recommendations}
-                  onChange={(e) => setReportForm({ ...reportForm, recommendations: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={reportForm.isFinalized}
-                    onChange={(e) => setReportForm({ ...reportForm, isFinalized: e.target.checked })}
-                    className="rounded text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-slate-700 font-medium">Finaliser et horodater ce compte rendu</span>
-                </label>
-
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 shadow-xs"
-                >
-                  Valider le compte rendu
+                  Planifier l'entretien
                 </button>
               </div>
             </form>

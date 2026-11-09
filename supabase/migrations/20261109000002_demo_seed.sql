@@ -122,3 +122,4 @@ INSERT INTO notifications (id, recipient_id, type, title, message, action_url, i
   ('00000000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002', 'interview_scheduled', 'Entretien programmé', 'Entretien d alerte assiduité prévu avec Camille Girard le 11/11/2026 à 14h00.', '/entretiens', FALSE),
   ('00000000-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000002', 'meeting_upcoming', 'Réunion pédagogique', 'Synchronisation Intervenants ESD prévue le 12/11/2026 à 18h00.', '/synchronisations', TRUE)
 ON CONFLICT (id) DO NOTHING;
+
