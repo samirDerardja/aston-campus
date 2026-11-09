@@ -74,31 +74,10 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Authentification
+  const [currentUser, setCurrentUser] = useState<UserProfile>(CURRENT_USER);
+  const [isDemoMode] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
 
-  const login = (role: UserRole) => {
-    switchRole(role);
-    setIsAuthenticated(true);
-  };
-
-  const logout = () => {
-    setIsAuthenticated(false);
-  };
-
-  // Filtrage strict par rôle (Cloisonnement formateur)
-  const accessiblePromotions = currentUser.role === 'formateur'
-    ? promotions.filter(p => p.referentTrainerId === 'tr-01' || p.id === 'promo-1' || p.id === 'promo-2')
-    : promotions;
-
-  const accessibleStudents = currentUser.role === 'formateur'
-    ? students.filter(s => accessiblePromotions.some(p => p.id === s.promotionId))
-    : students;
-
-  const accessibleActions = currentUser.role === 'formateur'
-    ? actions.filter(a => a.assigneeId === 'tr-01' || accessiblePromotions.some(p => p.id === a.promotionId))
-    : actions;
-  
   const [promotions, setPromotions] = useState<Promotion[]>(() => {
     const saved = localStorage.getItem('aston_promotions');
     return saved ? JSON.parse(saved) : INITIAL_PROMOTIONS;
@@ -138,6 +117,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
+  const switchRole = (newRole: UserProfile['role']) => {
+    let name = 'Samir Derardja';
+    if (newRole === 'direction') name = 'Claire Dubois';
+    if (newRole === 'formateur') name = 'Thomas Moreau';
+    if (newRole === 'admin_technique') name = 'Alexandre Admin';
+
+    setCurrentUser({
+      ...currentUser,
+      role: newRole,
+      firstName: name.split(' ')[0],
+      lastName: name.split(' ')[1] || '',
+      email: `${name.toLowerCase().replace(' ', '.')}@aston.fr`
+    });
+  };
+
+  const login = (role: UserRole) => {
+    switchRole(role);
+    setIsAuthenticated(true);
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+  };
+
+  // Filtrage par rôle (Cloisonnement formateur)
+  const accessiblePromotions = currentUser.role === 'formateur'
+    ? promotions.filter(p => p.referentTrainerId === 'tr-01' || p.id === 'promo-dw-2025' || p.id === 'promo-tsrs-2025')
+    : promotions;
+
+  const accessibleStudents = currentUser.role === 'formateur'
+    ? students.filter(s => accessiblePromotions.some(p => p.id === s.promotionId))
+    : students;
+
+  const accessibleActions = currentUser.role === 'formateur'
+    ? actions.filter(a => a.assigneeId === 'tr-01' || accessiblePromotions.some(p => p.id === a.promotionId))
+    : actions;
+
   // Persistence locale du state de démo
   useEffect(() => {
     localStorage.setItem('aston_actions', JSON.stringify(actions));
@@ -167,20 +183,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const switchRole = (newRole: UserProfile['role']) => {
-    let name = 'Marc Lefèvre';
-    if (newRole === 'direction') name = 'Claire Dubois';
-    if (newRole === 'formateur') name = 'Thomas Moreau';
-    if (newRole === 'admin_technique') name = 'Alexandre Admin';
-
-    setCurrentUser({
-      ...currentUser,
-      role: newRole,
-      firstName: name.split(' ')[0],
-      lastName: name.split(' ')[1],
-      email: `${name.toLowerCase().replace(' ', '.')}@aston-campus.demo`
-    });
-  };
 
   const addInterview: AppContextType['addInterview'] = (data) => {
     const promo = promotions.find(p => p.id === data.promotionId);
