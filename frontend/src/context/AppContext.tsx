@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
-  UserProfile, Promotion, Student, Trainer, CalendarEvent, 
+  UserProfile, UserRole, Promotion, Student, Trainer, CalendarEvent, 
   Interview, Meeting, ActionItem, DocumentItem, AppNotification, ActionStatus, ActionPriority, InterviewType
 } from '../types';
 import { 

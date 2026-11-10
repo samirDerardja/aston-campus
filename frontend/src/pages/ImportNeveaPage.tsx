@@ -37,22 +37,22 @@ export const ImportNeveaPage: React.FC = () => {
 
       {/* Étapes du processus */}
       <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-xs">
-        <div className={`flex items-center space-x-2 ${step >= 1 ? 'text-indigo-600 font-bold' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${step >= 1 ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>1</span>
+        <div className={`flex items-center space-x-2 ${step >= 1 ? 'text-blue-600 font-bold' : 'text-slate-400'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>1</span>
           <span>Sélection CSV</span>
         </div>
         <div className="h-0.5 w-12 bg-slate-200"></div>
-        <div className={`flex items-center space-x-2 ${step >= 2 ? 'text-indigo-600 font-bold' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${step >= 2 ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>2</span>
+        <div className={`flex items-center space-x-2 ${step >= 2 ? 'text-blue-600 font-bold' : 'text-slate-400'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>2</span>
           <span>Correspondance colonnes</span>
         </div>
         <div className="h-0.5 w-12 bg-slate-200"></div>
-        <div className={`flex items-center space-x-2 ${step >= 3 ? 'text-indigo-600 font-bold' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${step >= 3 ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>3</span>
+        <div className={`flex items-center space-x-2 ${step >= 3 ? 'text-blue-600 font-bold' : 'text-slate-400'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>3</span>
           <span>Prévisualisation & Doublons</span>
         </div>
         <div className="h-0.5 w-12 bg-slate-200"></div>
-        <div className={`flex items-center space-x-2 ${step >= 4 ? 'text-indigo-600 font-bold' : 'text-slate-400'}`}>
+        <div className={`flex items-center space-x-2 ${step >= 4 ? 'text-blue-600 font-bold' : 'text-slate-400'}`}>
           <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${step >= 4 ? 'bg-emerald-600 text-white' : 'bg-slate-100'}`}>4</span>
           <span>Rapport d'import</span>
         </div>
@@ -62,8 +62,8 @@ export const ImportNeveaPage: React.FC = () => {
       {step === 1 && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
           <h2 className="text-sm font-bold text-slate-900">1. Sélection du fichier d'export Nevea</h2>
-          <div className="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-xl p-8 text-center cursor-pointer transition bg-slate-50/50">
-            <Upload className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+          <div className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl p-8 text-center cursor-pointer transition bg-slate-50/50">
+            <Upload className="w-8 h-8 text-blue-500 mx-auto mb-2" />
             <p className="text-xs font-semibold text-slate-800">Glissez-déposez le fichier CSV ou cliquez pour sélectionner</p>
             <p className="text-[11px] text-slate-400 mt-1">Fichiers acceptés : .csv (séparateur virgule ou point-virgule)</p>
             <div className="mt-4 inline-flex items-center space-x-2 bg-white border border-slate-200 px-3 py-1.5 rounded-md text-xs font-mono text-slate-600">
@@ -75,7 +75,7 @@ export const ImportNeveaPage: React.FC = () => {
           <div className="flex justify-end pt-3">
             <button
               onClick={() => setStep(2)}
-              className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
+              className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
             >
               <span>Continuer vers le mapping</span>
               <ArrowRight className="w-4 h-4" />
@@ -142,7 +142,7 @@ export const ImportNeveaPage: React.FC = () => {
             </button>
             <button
               onClick={() => setStep(3)}
-              className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
+              className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
             >
               <span>Prévisualiser les données</span>
               <ArrowRight className="w-4 h-4" />
@@ -208,7 +208,7 @@ export const ImportNeveaPage: React.FC = () => {
             <button
               onClick={handleSimulateImport}
               disabled={isProcessing}
-              className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
+              className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
             >
               {isProcessing ? (
                 <>
@@ -255,7 +255,7 @@ export const ImportNeveaPage: React.FC = () => {
           <div className="pt-4">
             <button
               onClick={() => setStep(1)}
-              className="text-xs text-indigo-600 font-semibold hover:underline"
+              className="text-xs text-blue-600 font-semibold hover:underline"
             >
               Effectuer un autre import CSV
             </button>
@@ -265,7 +265,7 @@ export const ImportNeveaPage: React.FC = () => {
 
       {/* Documentation Connecteur API Étape B */}
       <div className="bg-slate-900 text-slate-300 p-5 rounded-xl border border-slate-800 text-xs space-y-2">
-        <div className="flex items-center space-x-2 text-indigo-400 font-semibold">
+        <div className="flex items-center space-x-2 text-blue-400 font-semibold">
           <ShieldAlert className="w-4 h-4" />
           <span>Étape B — Connecteur API Nevea Direct (Statut : En attente d'agrément)</span>
         </div>

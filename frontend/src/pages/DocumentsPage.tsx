@@ -5,14 +5,27 @@ import { FolderArchive, Upload, Search, FileText, Download, ShieldCheck, Lock } 
 export const DocumentsPage: React.FC = () => {
   const { documents, promotions } = useApp();
   const [search, setSearch] = useState('');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
 
   const filteredDocs = documents.filter(d => 
     d.title.toLowerCase().includes(search.toLowerCase()) ||
     d.fileName.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleDownload = (fileName: string) => {
+    setDownloadNotice(`Génération de l'URL signée Supabase Storage pour : ${fileName}`);
+    setTimeout(() => setDownloadNotice(null), 3500);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans">
+      {downloadNotice && (
+        <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-xl flex items-center justify-between">
+          <span>✓ {downloadNotice}</span>
+          <button onClick={() => setDownloadNotice(null)} className="text-blue-500 hover:text-blue-700">✕</button>
+        </div>
+      )}
       {/* Entête */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -23,8 +36,8 @@ export const DocumentsPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => alert("Formulaire de téléversement sécurisé : validation de type MIME (PDF/DOCX) et limite 25 Mo.")}
-          className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-xs transition"
+          onClick={() => setShowUploadModal(true)}
+          className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm shadow-blue-700/20 transition"
         >
           <Upload className="w-4 h-4" />
           <span>Téléverser un document</span>
@@ -81,8 +94,8 @@ export const DocumentsPage: React.FC = () => {
                 </td>
                 <td className="py-3 px-4 text-right">
                   <button
-                    onClick={() => alert(`Génération de l'URL signée Supabase Storage pour le document : ${doc.fileName}`)}
-                    className="inline-flex items-center space-x-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold"
+                    onClick={() => handleDownload(doc.fileName)}
+                    className="inline-flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-800 font-semibold"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Télécharger</span>
@@ -93,6 +106,24 @@ export const DocumentsPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <h3 className="text-base font-bold text-slate-900 font-display">Téléverser un document pédagogique</h3>
+            <p className="text-xs text-slate-500">Validation stricte MIME PDF / DOCX, taille max 25 Mo, stockage Supabase privé.</p>
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-xs text-slate-500">
+              <Upload className="w-8 h-8 mx-auto text-blue-500 mb-2" />
+              <p className="font-semibold text-slate-700">Glissez-déposez un fichier ici</p>
+              <p className="text-[11px] text-slate-400 mt-1">ou parcourez depuis votre poste</p>
+            </div>
+            <div className="flex justify-end space-x-2 pt-2">
+              <button onClick={() => setShowUploadModal(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600">Annuler</button>
+              <button onClick={() => { setShowUploadModal(false); setDownloadNotice('Fichier téléversé avec succès dans le bucket sécurisé.'); }} className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold">Téléverser</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
