@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   CheckSquare, Search, Filter, Plus, Calendar, 
   User, AlertTriangle, CheckCircle2, Clock, ChevronRight,
-  MoreHorizontal, ArrowRight, X
+  MoreHorizontal, ArrowRight, X, GripVertical, Sparkles, RotateCcw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -19,7 +19,7 @@ interface KanbanAction {
 }
 
 export const ActionsPage: React.FC = () => {
-  const { promotions } = useApp();
+  const { promotions, updateActionStatus } = useApp();
 
   const [actions, setActions] = useState<KanbanAction[]>([
     // Colonne 1 : À faire (7)
@@ -339,10 +339,16 @@ export const ActionsPage: React.FC = () => {
   const inProgressActions = filteredActions.filter((a) => a.status === 'in_progress');
   const completedActions = filteredActions.filter((a) => a.status === 'completed');
 
+  const [draggedActionId, setDraggedActionId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<'todo' | 'in_progress' | 'completed' | null>(null);
+
   const moveAction = (id: string, newStatus: 'todo' | 'in_progress' | 'completed') => {
     setActions((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
     );
+    if (updateActionStatus) {
+      updateActionStatus(id, newStatus);
+    }
   };
 
   const handleCreateAction = (e: React.FormEvent) => {
@@ -376,11 +382,17 @@ export const ActionsPage: React.FC = () => {
       {/* En-tête avec bouton de création de luxe */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Actions Correctives
-          </h1>
+          <div className="flex items-center space-x-2.5">
+            <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Actions Correctives
+            </h1>
+            <span className="hidden sm:inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold font-mono">
+              <Sparkles className="w-3 h-3 text-[#00D084]" />
+              <span>Glisser-Déposer actif</span>
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Pilotage pédagogique et suivi des plans d'accompagnement apprenants
+            Pilotage pédagogique • Glissez-déposez les cartes entre les colonnes pour changer leur statut en temps réel
           </p>
         </div>
 
@@ -450,197 +462,362 @@ export const ActionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3 Colonnes Kanban strictes en verre translucide : À faire (7), En cours (14), Clôturées (12) */}
+      {/* 3 Colonnes Kanban strictes en verre translucide avec Glisser-Déposer (Drag and Drop) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-        {/* COLONNE 1 : À faire (7) */}
-        <div className="bg-white/45 backdrop-blur-xl p-4 rounded-3xl border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)] space-y-3 min-h-[550px]">
-          <div className="flex items-center justify-between px-1 mb-1">
-            <div className="flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-900"></span>
-              <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
-                À faire ({todoActions.length})
-              </h3>
-            </div>
-            <span className="text-[10px] font-bold text-slate-700 bg-white/80 border border-slate-200/60 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
-              À planifier
-            </span>
-          </div>
-
+        {/* COLONNE 1 : À faire */}
+        <div 
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (dragOverColumn !== 'todo') setDragOverColumn('todo');
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              if (dragOverColumn === 'todo') setDragOverColumn(null);
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain') || draggedActionId;
+            if (id) moveAction(id, 'todo');
+            setDraggedActionId(null);
+            setDragOverColumn(null);
+          }}
+          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] flex flex-col justify-between ${
+            dragOverColumn === 'todo'
+              ? 'bg-slate-100/95 border-slate-700 ring-2 ring-slate-800/30 shadow-xl scale-[1.01]'
+              : 'bg-white/45 backdrop-blur-xl border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
+          }`}
+        >
           <div className="space-y-3">
-            {todoActions.map((act) => (
-              <div
-                key={act.id}
-                className="glass-card p-4 rounded-2xl space-y-3"
-              >
-                <div className="flex items-start justify-between">
-                  <span
-                    className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md font-mono ${
-                      act.priority === 'Haute'
-                        ? 'bg-rose-50 text-[#F43F5E] border border-rose-200/80'
-                        : act.priority === 'Moyenne'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    {act.priority}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-400 flex items-center space-x-1">
-                    <Calendar className="w-3 h-3 text-slate-400" />
-                    <span>{act.dueDate}</span>
-                  </span>
-                </div>
+            <div className="flex items-center justify-between px-1 mb-1">
+              <div className="flex items-center space-x-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-900"></span>
+                <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
+                  À faire ({todoActions.length})
+                </h3>
+              </div>
+              <span className="text-[10px] font-bold text-slate-700 bg-white/80 border border-slate-200/60 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
+                À planifier
+              </span>
+            </div>
 
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 leading-snug">{act.title}</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{act.promotion}</p>
-                </div>
+            {/* Zone de drop cible visible lors du glissement */}
+            {draggedActionId && (
+              <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
+                dragOverColumn === 'todo'
+                  ? 'border-slate-800 bg-white text-slate-900 shadow-xs'
+                  : 'border-slate-300 text-slate-400 bg-white/40'
+              }`}>
+                {dragOverColumn === 'todo' ? '✓ Déposer ici pour placer dans "À faire"' : 'Glisser ici (À faire)'}
+              </div>
+            )}
 
-                {act.notes && (
-                  <p className="text-[11px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-white/90 shadow-2xs">
-                    {act.notes}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-between pt-2 border-t border-white/60">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 rounded-lg bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center font-mono shadow-2xs">
-                      {act.avatarText}
+            <div className="space-y-3">
+              {todoActions.map((act) => (
+                <div
+                  key={act.id}
+                  draggable={true}
+                  onDragStart={(e) => {
+                    setDraggedActionId(act.id);
+                    e.dataTransfer.setData('text/plain', act.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragEnd={() => {
+                    setDraggedActionId(null);
+                    setDragOverColumn(null);
+                  }}
+                  className={`glass-card p-4 rounded-2xl space-y-3 cursor-grab active:cursor-grabbing transition-all duration-150 select-none group/card ${
+                    draggedActionId === act.id
+                      ? 'opacity-30 scale-95 border-2 border-dashed border-slate-800 rotate-1 shadow-lg'
+                      : 'hover:-translate-y-0.5 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <span
+                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md font-mono ${
+                        act.priority === 'Haute'
+                          ? 'bg-rose-50 text-[#F43F5E] border border-rose-200/80'
+                          : act.priority === 'Moyenne'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {act.priority}
+                    </span>
+                    
+                    <div className="flex items-center space-x-1.5 text-slate-400">
+                      <span className="text-[11px] font-mono flex items-center space-x-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span>{act.dueDate}</span>
+                      </span>
+                      <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover/card:text-slate-700 transition cursor-grab" />
                     </div>
-                    <span className="text-[11px] font-medium text-slate-600">{act.responsible}</span>
                   </div>
 
-                  <button
-                    onClick={() => moveAction(act.id, 'in_progress')}
-                    className="text-[11px] font-bold text-[#00A86B] hover:text-[#00D084] flex items-center space-x-0.5 transition"
-                  >
-                    <span>Lancer</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 leading-snug">{act.title}</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{act.promotion}</p>
+                  </div>
+
+                  {act.notes && (
+                    <p className="text-[11px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-white/90 shadow-2xs">
+                      {act.notes}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/60">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 rounded-lg bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center font-mono shadow-2xs">
+                        {act.avatarText}
+                      </div>
+                      <span className="text-[11px] font-medium text-slate-600">{act.responsible}</span>
+                    </div>
+
+                    <button
+                      onClick={() => moveAction(act.id, 'in_progress')}
+                      className="text-[11px] font-bold text-[#00A86B] hover:text-[#00D084] flex items-center space-x-0.5 transition"
+                    >
+                      <span>Lancer</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* COLONNE 2 : En cours (14) */}
-        <div className="bg-white/45 backdrop-blur-xl p-4 rounded-3xl border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)] space-y-3 min-h-[550px]">
-          <div className="flex items-center justify-between px-1 mb-1">
-            <div className="flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#00D084] shadow-sm shadow-[#00D084]/50 animate-pulse"></span>
-              <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
-                En cours ({inProgressActions.length})
-              </h3>
-            </div>
-            <span className="text-[10px] font-bold text-emerald-800 bg-[#00D084]/15 border border-[#00D084]/25 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
-              Suivi actif
-            </span>
-          </div>
-
+        {/* COLONNE 2 : En cours */}
+        <div 
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (dragOverColumn !== 'in_progress') setDragOverColumn('in_progress');
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              if (dragOverColumn === 'in_progress') setDragOverColumn(null);
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain') || draggedActionId;
+            if (id) moveAction(id, 'in_progress');
+            setDraggedActionId(null);
+            setDragOverColumn(null);
+          }}
+          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] flex flex-col justify-between ${
+            dragOverColumn === 'in_progress'
+              ? 'bg-emerald-50/85 border-[#00D084] ring-2 ring-[#00D084]/40 shadow-xl scale-[1.01]'
+              : 'bg-white/45 backdrop-blur-xl border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
+          }`}
+        >
           <div className="space-y-3">
-            {inProgressActions.map((act) => (
-              <div
-                key={act.id}
-                className="glass-card p-4 rounded-2xl space-y-3"
-              >
-                <div className="flex items-start justify-between">
-                  <span
-                    className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md font-mono ${
-                      act.priority === 'Haute'
-                        ? 'bg-rose-50 text-[#F43F5E] border border-rose-200/80'
-                        : act.priority === 'Moyenne'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    {act.priority}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-400 flex items-center space-x-1">
-                    <Calendar className="w-3 h-3 text-slate-400" />
-                    <span>{act.dueDate}</span>
-                  </span>
-                </div>
+            <div className="flex items-center justify-between px-1 mb-1">
+              <div className="flex items-center space-x-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00D084] shadow-sm shadow-[#00D084]/50 animate-pulse"></span>
+                <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
+                  En cours ({inProgressActions.length})
+                </h3>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-800 bg-[#00D084]/15 border border-[#00D084]/25 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
+                Suivi actif
+              </span>
+            </div>
 
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 leading-snug">{act.title}</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{act.promotion}</p>
-                </div>
+            {/* Zone de drop cible visible lors du glissement */}
+            {draggedActionId && (
+              <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
+                dragOverColumn === 'in_progress'
+                  ? 'border-[#00D084] bg-emerald-100 text-emerald-900 shadow-xs'
+                  : 'border-emerald-300/60 text-emerald-700/70 bg-emerald-50/30'
+              }`}>
+                {dragOverColumn === 'in_progress' ? '✓ Déposer ici pour passer "En cours"' : 'Glisser ici (En cours)'}
+              </div>
+            )}
 
-                {act.notes && (
-                  <p className="text-[11px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-white/90 shadow-2xs">
-                    {act.notes}
-                  </p>
-                )}
+            <div className="space-y-3">
+              {inProgressActions.map((act) => (
+                <div
+                  key={act.id}
+                  draggable={true}
+                  onDragStart={(e) => {
+                    setDraggedActionId(act.id);
+                    e.dataTransfer.setData('text/plain', act.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragEnd={() => {
+                    setDraggedActionId(null);
+                    setDragOverColumn(null);
+                  }}
+                  className={`glass-card p-4 rounded-2xl space-y-3 cursor-grab active:cursor-grabbing transition-all duration-150 select-none group/card ${
+                    draggedActionId === act.id
+                      ? 'opacity-30 scale-95 border-2 border-dashed border-[#00D084] rotate-1 shadow-lg'
+                      : 'hover:-translate-y-0.5 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <span
+                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md font-mono ${
+                        act.priority === 'Haute'
+                          ? 'bg-rose-50 text-[#F43F5E] border border-rose-200/80'
+                          : act.priority === 'Moyenne'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {act.priority}
+                    </span>
 
-                <div className="flex items-center justify-between pt-2 border-t border-white/60">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 rounded-lg bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center font-mono shadow-2xs">
-                      {act.avatarText}
+                    <div className="flex items-center space-x-1.5 text-slate-400">
+                      <span className="text-[11px] font-mono flex items-center space-x-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span>{act.dueDate}</span>
+                      </span>
+                      <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover/card:text-slate-700 transition cursor-grab" />
                     </div>
-                    <span className="text-[11px] font-medium text-slate-600">{act.responsible}</span>
                   </div>
 
-                  <button
-                    onClick={() => moveAction(act.id, 'completed')}
-                    className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-0.5 transition"
-                  >
-                    <span>Clôturer</span>
-                    <CheckCircle2 className="w-3 h-3" />
-                  </button>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 leading-snug">{act.title}</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{act.promotion}</p>
+                  </div>
+
+                  {act.notes && (
+                    <p className="text-[11px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-white/90 shadow-2xs">
+                      {act.notes}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/60">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 rounded-lg bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center font-mono shadow-2xs">
+                        {act.avatarText}
+                      </div>
+                      <span className="text-[11px] font-medium text-slate-600">{act.responsible}</span>
+                    </div>
+
+                    <button
+                      onClick={() => moveAction(act.id, 'completed')}
+                      className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-0.5 transition"
+                    >
+                      <span>Clôturer</span>
+                      <CheckCircle2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* COLONNE 3 : Clôturées (12) */}
-        <div className="bg-white/45 backdrop-blur-xl p-4 rounded-3xl border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)] space-y-3 min-h-[550px]">
-          <div className="flex items-center justify-between px-1 mb-1">
-            <div className="flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
-                Clôturées ({completedActions.length})
-              </h3>
-            </div>
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
-              Validées
-            </span>
-          </div>
-
+        {/* COLONNE 3 : Clôturées */}
+        <div 
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (dragOverColumn !== 'completed') setDragOverColumn('completed');
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              if (dragOverColumn === 'completed') setDragOverColumn(null);
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain') || draggedActionId;
+            if (id) moveAction(id, 'completed');
+            setDraggedActionId(null);
+            setDragOverColumn(null);
+          }}
+          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] flex flex-col justify-between ${
+            dragOverColumn === 'completed'
+              ? 'bg-indigo-50/85 border-indigo-500 ring-2 ring-indigo-500/40 shadow-xl scale-[1.01]'
+              : 'bg-white/45 backdrop-blur-xl border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
+          }`}
+        >
           <div className="space-y-3">
-            {completedActions.map((act) => (
-              <div
-                key={act.id}
-                className="bg-white/70 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-2xs space-y-3 opacity-90 hover:opacity-100 transition"
-              >
-                <div className="flex items-start justify-between">
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Terminée
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-400">{act.dueDate}</span>
-                </div>
+            <div className="flex items-center justify-between px-1 mb-1">
+              <div className="flex items-center space-x-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
+                  Clôturées ({completedActions.length})
+                </h3>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
+                Validées
+              </span>
+            </div>
 
-                <div>
-                  <h4 className="text-xs font-bold text-slate-700 line-through decoration-slate-400">
-                    {act.title}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{act.promotion}</p>
-                </div>
+            {/* Zone de drop cible visible lors du glissement */}
+            {draggedActionId && (
+              <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
+                dragOverColumn === 'completed'
+                  ? 'border-indigo-600 bg-indigo-100 text-indigo-900 shadow-xs'
+                  : 'border-indigo-300/60 text-indigo-700/70 bg-indigo-50/30'
+              }`}>
+                {dragOverColumn === 'completed' ? '✓ Déposer ici pour Clôturer l\'action' : 'Glisser ici (Clôturées)'}
+              </div>
+            )}
 
-                <div className="flex items-center justify-between pt-2 border-t border-white/60">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center font-mono">
-                      {act.avatarText}
+            <div className="space-y-3">
+              {completedActions.map((act) => (
+                <div
+                  key={act.id}
+                  draggable={true}
+                  onDragStart={(e) => {
+                    setDraggedActionId(act.id);
+                    e.dataTransfer.setData('text/plain', act.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragEnd={() => {
+                    setDraggedActionId(null);
+                    setDragOverColumn(null);
+                  }}
+                  className={`bg-white/70 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-2xs space-y-3 opacity-90 hover:opacity-100 cursor-grab active:cursor-grabbing transition-all duration-150 select-none group/card ${
+                    draggedActionId === act.id
+                      ? 'opacity-30 scale-95 border-2 border-dashed border-indigo-500 rotate-1 shadow-lg'
+                      : 'hover:-translate-y-0.5 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Terminée
+                    </span>
+                    <div className="flex items-center space-x-1.5 text-slate-400">
+                      <span className="text-[11px] font-mono">{act.dueDate}</span>
+                      <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover/card:text-slate-600 transition cursor-grab" />
                     </div>
-                    <span className="text-[11px] font-medium text-slate-500">{act.responsible}</span>
                   </div>
 
-                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center space-x-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Archivée</span>
-                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 line-through decoration-slate-400">
+                      {act.title}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{act.promotion}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/60">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center font-mono">
+                        {act.avatarText}
+                      </div>
+                      <span className="text-[11px] font-medium text-slate-500">{act.responsible}</span>
+                    </div>
+
+                    <button
+                      onClick={() => moveAction(act.id, 'in_progress')}
+                      title="Rouvrir et repasser En cours"
+                      className="text-[11px] font-semibold text-slate-500 hover:text-indigo-600 flex items-center space-x-1 transition"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Rouvrir</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
