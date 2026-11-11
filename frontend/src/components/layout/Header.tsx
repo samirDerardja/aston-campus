@@ -4,7 +4,7 @@ import { Search, Bell, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const Header: React.FC = () => {
-  const { setCommandPaletteOpen, unreadNotificationsCount } = useApp();
+  const { setCommandPaletteOpen, unreadNotificationsCount, isBackendConnected } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -42,6 +42,16 @@ export const Header: React.FC = () => {
         <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#00D084]/10 text-emerald-800 border border-[#00D084]/25 text-[10px] font-bold font-mono tracking-wider backdrop-blur-md shadow-2xs">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00D084] animate-pulse"></span>
           <span>SYNCHRONISÉ AVEC NEVEA</span>
+        </div>
+
+        {/* Backend & Database Status Badge */}
+        <div className={`hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono tracking-wider border backdrop-blur-md ${
+          isBackendConnected 
+            ? 'bg-blue-500/10 text-blue-800 border-blue-500/20' 
+            : 'bg-slate-100 text-slate-500 border-slate-200'
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${isBackendConnected ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'}`}></span>
+          <span>{isBackendConnected ? 'API FASTIFY & DB' : 'MODE AUTONOME'}</span>
         </div>
       </div>
 

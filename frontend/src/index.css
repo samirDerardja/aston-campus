@@ -1,35 +1,31 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+@layer base {
+  :root {
+    --spark-green: #00D084;
+    --spark-dark: #1E293B;
+    --spark-black: #0F172A;
+    --spark-canvas: #F8F9FA;
+    --color-luxury-dark: #0F172A;
+    --color-luxury-navy: #1E293B;
+    --color-luxury-emerald: #00D084;
+    --color-luxury-accent: #10B981;
+    --color-luxury-rose: #F43F5E;
+    --color-luxury-canvas: #F8F9FA;
+    --color-luxury-glass-border: rgba(255, 255, 255, 0.75);
+  }
 
-  --color-luxury-dark: #0F172A;
-  --color-luxury-navy: #1E293B;
-  --color-luxury-emerald: #00D084;
-  --color-luxury-accent: #10B981;
-  --color-luxury-rose: #F43F5E;
-  --color-luxury-canvas: #F8F9FA;
-  --color-luxury-glass-border: rgba(255, 255, 255, 0.75);
-}
+  body {
+    background-color: #F8F9FB;
+    color: #0F172A;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
 
-:root {
-  --spark-green: #00D084;
-  --spark-dark: #1E293B;
-  --spark-black: #0F172A;
-  --spark-canvas: #F8F9FA;
-}
-
-body {
-  font-family: var(--font-sans);
-  background-color: #F8F9FB;
-  color: #0F172A;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-}
-
-h1, h2, h3, h4, .font-display {
-  font-family: var(--font-display);
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
 }
 
 .tabular-nums {

@@ -15,6 +15,14 @@ export default {
           card: '#FFFFFF',
           secondary: '#667085',
         },
+        luxury: {
+          dark: '#0F172A',
+          navy: '#1E293B',
+          emerald: '#00D084',
+          accent: '#10B981',
+          rose: '#F43F5E',
+          canvas: '#F8F9FA',
+        },
         state: {
           success: '#12B76A',
           warning: '#F79009',
@@ -23,15 +31,15 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {
-        'xs': '0 1px 2px 0 rgba(16, 24, 40, 0.05)',
-        'subtle': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
-        'premium': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
+        '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+        'glass': '0 8px 30px -4px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02), inset 0 1px 2px 0 rgba(255, 255, 255, 0.9)',
       }
     },
   },
   plugins: [],
 }
-

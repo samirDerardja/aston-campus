@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import { z } from 'zod';
+import { inMemoryDb, supabase, isDbConnected } from './db.js';
 
 const server: FastifyInstance = Fastify({
   logger: {
@@ -56,6 +57,8 @@ server.get('/health', async () => {
   return {
     status: 'ok',
     service: 'aston-campus-backend',
+    databaseConnected: isDbConnected,
+    mode: isDbConnected ? 'supabase_postgres' : 'in_memory_synchronized',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
   };
@@ -63,29 +66,135 @@ server.get('/health', async () => {
 
 // --- MODULE PROMOTIONS ---
 server.get('/api/promotions', async () => {
-  return [
-    {
-      id: '33333333-0000-0000-0000-000000000001',
-      code: 'PROMO-TSRS-2025-A',
-      name: 'TSRS 2025/2026 - Groupe A',
-      cursus: 'Technicien Systèmes Réseaux & Sécurité',
-      status: 'active',
-      studentsCount: 18,
-      neveaReference: 'NEVEA-PR-901',
-    },
-    {
-      id: '33333333-0000-0000-0000-000000000002',
-      code: 'PROMO-ESD-2025-P1',
-      name: 'Expert Sécurité Digitale 2025/2027',
-      cursus: 'Expert En Sécurité Digitale',
-      status: 'active',
-      studentsCount: 22,
-      neveaReference: 'NEVEA-PR-902',
-    },
-  ];
+  if (supabase) {
+    const { data, error } = await supabase.from('promotions').select('*');
+    if (!error && data) return data;
+  }
+  return inMemoryDb.promotions;
 });
 
-// --- MODULE SESSIONS & PROTECTION NEVEA ---
+server.get('/api/promotions/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const promo = inMemoryDb.promotions.find(p => p.id === id || p.code === id);
+  if (!promo) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Promotion introuvable' });
+  }
+  return promo;
+});
+
+// --- MODULE APPRENANTS (STUDENTS) ---
+server.get('/api/students', async () => {
+  if (supabase) {
+    const { data, error } = await supabase.from('students').select('*');
+    if (!error && data) return data;
+  }
+  return inMemoryDb.students;
+});
+
+server.get('/api/students/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const student = inMemoryDb.students.find(s => s.id === id || s.firstName.toLowerCase() === id.toLowerCase());
+  if (!student) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Apprenant introuvable' });
+  }
+  return student;
+});
+
+// --- MODULE FORMATEURS (TRAINERS) ---
+server.get('/api/trainers', async () => {
+  if (supabase) {
+    const { data, error } = await supabase.from('trainers').select('*, profiles(*)');
+    if (!error && data) return data;
+  }
+  return inMemoryDb.trainers;
+});
+
+// --- MODULE ACTIONS CORRECTIVES (KANBAN) ---
+server.get('/api/actions', async () => {
+  if (supabase) {
+    const { data, error } = await supabase.from('action_items').select('*');
+    if (!error && data) return data;
+  }
+  return inMemoryDb.actions;
+});
+
+const createActionSchema = z.object({
+  title: z.string().min(3),
+  description: z.string().optional(),
+  studentName: z.string().optional(),
+  assigneeName: z.string().optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
+  dueDate: z.string(),
+  status: z.enum(['todo', 'in_progress', 'waiting', 'completed', 'cancelled']).optional(),
+});
+
+server.post('/api/actions', async (request: FastifyRequest, reply: FastifyReply) => {
+  const data = createActionSchema.parse(request.body);
+  const newAction = {
+    id: `act-${Date.now()}`,
+    title: data.title,
+    description: data.description || `Action pédagogique pour ${data.studentName || 'l apprenant'}`,
+    promotionName: 'Développeur Web - 2025',
+    studentName: data.studentName || 'Sophie Martin',
+    assigneeName: data.assigneeName || 'Samir Derardja',
+    priority: data.priority,
+    status: data.status || 'todo',
+    dueDate: data.dueDate,
+    createdAt: new Date().toISOString().split('T')[0],
+  };
+
+  inMemoryDb.actions.unshift(newAction as any);
+  return reply.status(201).send(newAction);
+});
+
+server.patch('/api/actions/:id/status', async (request: FastifyRequest<{ Params: { id: string }; Body: { status: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const { status } = request.body || {};
+
+  const action = inMemoryDb.actions.find(a => a.id === id);
+  if (!action) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Action introuvable' });
+  }
+
+  action.status = status as any;
+  return { success: true, action };
+});
+
+// --- MODULE ENTRETIENS ---
+server.get('/api/interviews', async () => {
+  if (supabase) {
+    const { data, error } = await supabase.from('interviews').select('*');
+    if (!error && data) return data;
+  }
+  return inMemoryDb.interviews;
+});
+
+const createInterviewSchema = z.object({
+  title: z.string().min(3),
+  studentName: z.string().optional(),
+  date: z.string(),
+  type: z.string().optional(),
+  location: z.string().optional(),
+});
+
+server.post('/api/interviews', async (request: FastifyRequest, reply: FastifyReply) => {
+  const data = createInterviewSchema.parse(request.body);
+  const newInterview = {
+    id: `int-${Date.now()}`,
+    title: data.title,
+    studentName: data.studentName || 'Thomas Dubois',
+    role: 'Apprenant',
+    date: data.date,
+    type: data.type || 'apprenant_individuel',
+    status: 'scheduled',
+    location: data.location || 'Bureau Coordination B201',
+  };
+
+  inMemoryDb.interviews.unshift(newInterview as any);
+  return reply.status(201).send(newInterview);
+});
+
+// --- MODULE SESSIONS & PROTECTION STRICTE NEVEA ---
 const updateSessionSchema = z.object({
   title: z.string().min(3),
   description: z.string().optional(),
@@ -95,7 +204,7 @@ server.patch('/api/sessions/:id', async (request: FastifyRequest<{ Params: { id:
   const { id } = request.params;
   
   // Exemple de session protégée Nevea (lecture seule absolue)
-  if (id === 'session-nevea-01' || id.startsWith('55555555')) {
+  if (id === 'session-nevea-01' || id.startsWith('55555555') || id.includes('nevea')) {
     const error: any = new Error('ASTON_ERR_READONLY: Les cours officiels issus de Nevea sont strictement en lecture seule et ne peuvent pas être modifiés depuis Aston Campus.');
     error.code = 'ASTON_ERR_READONLY';
     error.statusCode = 403;
@@ -110,35 +219,15 @@ server.patch('/api/sessions/:id', async (request: FastifyRequest<{ Params: { id:
   };
 });
 
-// --- MODULE ACTIONS CORRECTIVES ---
-const createActionSchema = z.object({
-  title: z.string().min(3),
-  description: z.string(),
-  promotionId: z.string(),
-  assigneeId: z.string(),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']),
-  dueDate: z.string(),
-});
-
-server.post('/api/actions', async (request: FastifyRequest, reply: FastifyReply) => {
-  const data = createActionSchema.parse(request.body);
-  return reply.status(201).send({
-    id: `act-${Date.now()}`,
-    ...data,
-    status: 'todo',
-    createdAt: new Date().toISOString(),
-  });
-});
-
 // --- MODULE NEVEA CSV IMPORT ASSISTANT ---
-server.post('/api/nevea/preview-csv', async (request: FastifyRequest) => {
+server.post('/api/nevea/preview-csv', async () => {
   return {
     rowsTotal: 4,
     validRows: 4,
     detectedDuplicates: 2,
     preview: [
-      { neveaId: 'NEVEA-ST-101', nom: 'Martin', prenom: 'Alexandre', promo: 'PROMO-TSRS-2025-A', action: 'update' },
-      { neveaId: 'NEVEA-ST-102', nom: 'Girard', prenom: 'Camille', promo: 'PROMO-TSRS-2025-A', action: 'update' },
+      { neveaId: 'NEVEA-ST-101', nom: 'Dubois', prenom: 'Thomas', promo: 'DW2025', action: 'update' },
+      { neveaId: 'NEVEA-ST-102', nom: 'Martin', prenom: 'Sophie', promo: 'DW2025', action: 'update' },
       { neveaId: 'NEVEA-ST-106', nom: 'Belkacem', prenom: 'Sami', promo: 'PROMO-ESD-2025-P1', action: 'insert' },
       { neveaId: 'NEVEA-ST-107', nom: 'Faure', prenom: 'Inès', promo: 'PROMO-ESD-2025-P1', action: 'insert' },
     ],

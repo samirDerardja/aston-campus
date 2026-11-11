@@ -8,6 +8,7 @@ import {
   INITIAL_EVENTS, INITIAL_INTERVIEWS, INITIAL_MEETINGS, INITIAL_ACTIONS,
   INITIAL_DOCUMENTS, INITIAL_NOTIFICATIONS
 } from '../data/mockData';
+import { api } from '../services/api';
 
 interface AppContextType {
   currentUser: UserProfile;
@@ -16,6 +17,7 @@ interface AppContextType {
   login: (role: UserRole) => void;
   logout: () => void;
   isDemoMode: boolean;
+  isBackendConnected: boolean;
   promotions: Promotion[];
   students: Student[];
   trainers: Trainer[];
@@ -77,6 +79,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUser, setCurrentUser] = useState<UserProfile>(CURRENT_USER);
   const [isDemoMode] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
 
   const [promotions, setPromotions] = useState<Promotion[]>(() => {
     const saved = localStorage.getItem('aston_promotions');
@@ -116,6 +119,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  // Synchronisation backend Fastify & Base de données
+  useEffect(() => {
+    const syncWithBackend = async () => {
+      const isAlive = await api.checkHealth();
+      setIsBackendConnected(isAlive);
+
+      if (isAlive) {
+        const [remotePromos, remoteStudents, remoteActions, remoteInterviews] = await Promise.all([
+          api.getPromotions(),
+          api.getStudents(),
+          api.getActions(),
+          api.getInterviews(),
+        ]);
+
+        if (remotePromos && remotePromos.length > 0) setPromotions(remotePromos);
+        if (remoteStudents && remoteStudents.length > 0) setStudents(remoteStudents as any);
+        if (remoteActions && remoteActions.length > 0) setActions(remoteActions as any);
+        if (remoteInterviews && remoteInterviews.length > 0) setInterviews(remoteInterviews as any);
+      }
+    };
+
+    syncWithBackend();
+  }, []);
 
   const switchRole = (newRole: UserProfile['role']) => {
     let name = 'Samir Derardja';
@@ -208,6 +235,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setInterviews(prev => [newInterview, ...prev]);
 
+    // Synchronisation backend Fastify / Base de données
+    api.createInterview({
+      title: data.title,
+      studentName: stu ? `${stu.firstName} ${stu.lastName}` : undefined,
+      date: data.scheduledAt,
+      type: data.type,
+      location: data.location,
+    }).catch(() => {});
+
     // Ajouter l'événement au calendrier
     const endDate = new Date(new Date(data.scheduledAt).getTime() + 45 * 60000).toISOString();
     setEvents(prev => [{
@@ -265,6 +301,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return action;
     }));
+
+    // Synchronisation backend Fastify / Base de données
+    api.updateActionStatus(actionId, newStatus).catch(() => {});
   };
 
   const addAction: AppContextType['addAction'] = (data) => {
@@ -295,6 +334,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setActions(prev => [newAction, ...prev]);
+
+    // Synchronisation backend Fastify / Base de données
+    api.createAction({
+      title: data.title,
+      description: data.description,
+      studentName: stu ? `${stu.firstName} ${stu.lastName}` : undefined,
+      assigneeName,
+      priority: data.priority,
+      dueDate: data.dueDate,
+      status: 'todo',
+    }).catch(() => {});
   };
 
   const convertDecisionToAction: AppContextType['convertDecisionToAction'] = (
@@ -364,6 +414,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       login,
       logout,
       isDemoMode,
+      isBackendConnected,
       promotions: accessiblePromotions,
       students: accessibleStudents,
       trainers,
