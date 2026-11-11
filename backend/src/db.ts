@@ -1,5 +1,10 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+try {
+  // Chargement automatique des fichiers .env en Node 20+
+  (process as any).loadEnvFile?.();
+} catch {}
+
 // Configuration Supabase si variables d'environnement présentes
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
@@ -232,3 +237,4 @@ export let inMemoryDb = {
     }
   ]
 };
+

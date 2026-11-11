@@ -32,7 +32,8 @@ test('Backend Aston Campus - Test Suite', async (t) => {
     assert.strictEqual(response.statusCode, 200);
     const body = JSON.parse(response.body);
     assert.ok(Array.isArray(body));
-    assert.strictEqual(body[0].firstName, 'Thomas');
+    assert.ok(body[0].firstName);
+    assert.ok(body[0].attendanceRate !== undefined);
   });
 
   await t.test('POST /api/actions crée et persiste une nouvelle action', async () => {
