@@ -199,6 +199,97 @@ server.get('/api/students/:id', async (request: FastifyRequest<{ Params: { id: s
   return student;
 });
 
+// --- MODULE PARTENAIRES ENTREPRISES (ESN) ---
+server.get('/api/partners', async () => {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('partners').select('*');
+      if (!error && data && data.length > 0) return data;
+    } catch {}
+  }
+  return inMemoryDb.partners || [];
+});
+
+// --- MODULE ALERTES ASSIDUITÉ EN TEMPS RÉEL ---
+server.get('/api/alerts', async (request: FastifyRequest<{ Querystring: { status?: string; type?: string } }>) => {
+  const { status, type } = request.query;
+
+  if (supabase) {
+    try {
+      let query = supabase.from('student_alerts').select('*, students(first_name, last_name, company_name), promotions(name)');
+      if (status) query = query.eq('status', status);
+      if (type) query = query.eq('type', type);
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        return data.map((a: any) => ({
+          id: a.id,
+          studentId: a.student_id,
+          studentName: a.students ? `${a.students.first_name} ${a.students.last_name}` : 'Apprenant',
+          partnerName: a.students?.company_name || 'Helpline',
+          promotionId: a.promotion_id,
+          promotionName: a.promotions?.name || 'Promotion',
+          type: a.type,
+          severity: a.severity,
+          title: a.title,
+          description: a.description,
+          status: a.status,
+          triggeredAt: a.triggered_at?.split('T')[0] || 'Récemment'
+        }));
+      }
+    } catch {}
+  }
+
+  let list = inMemoryDb.alerts || [];
+  if (status) list = list.filter((a: any) => a.status === status);
+  if (type) list = list.filter((a: any) => a.type === type);
+  return list;
+});
+
+server.patch('/api/alerts/:id/status', async (request: FastifyRequest<{ Params: { id: string }; Body: { status: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const { status } = request.body || {};
+
+  if (supabase) {
+    try {
+      await supabase.from('student_alerts').update({ status, resolved_at: status === 'resolved' ? new Date().toISOString() : null }).eq('id', id);
+    } catch {}
+  }
+
+  const alert = inMemoryDb.alerts.find((a: any) => a.id === id);
+  if (alert) {
+    (alert as any).status = status;
+  }
+  return { success: true, id, status };
+});
+
+server.post('/api/alerts/:id/convert-to-action', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const alert = inMemoryDb.alerts.find((a: any) => a.id === id);
+  if (!alert) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Alerte introuvable' });
+  }
+
+  // Création automatique de l'action corrective liée
+  const newAction = {
+    id: `act-${Date.now()}`,
+    title: `[Alerte Assiduité] ${alert.title}`,
+    description: `Action générée automatiquement depuis l alerte : ${alert.description}`,
+    promotionName: alert.promotionName || 'Promotion Aston',
+    studentName: alert.studentName,
+    assigneeName: 'Samir Derardja',
+    priority: alert.severity === 'critical' ? 'urgent' : (alert.severity === 'high' ? 'high' : 'medium'),
+    status: 'todo',
+    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: new Date().toISOString().split('T')[0],
+  };
+
+  inMemoryDb.actions.unshift(newAction as any);
+  (alert as any).status = 'in_progress';
+  (alert as any).actionId = newAction.id;
+
+  return reply.status(201).send({ success: true, action: newAction, alert });
+});
+
 // --- MODULE FORMATEURS (TRAINERS) ---
 server.get('/api/trainers', async () => {
   if (supabase) {
@@ -349,6 +440,57 @@ server.patch('/api/sessions/:id', async (request: FastifyRequest<{ Params: { id:
 });
 
 // --- MODULE NEVEA CSV IMPORT ASSISTANT ---
+// --- MODULE NEVEA CSV IMPORT & ANALYSE D'ALERTES EN TEMPS RÉEL ---
+server.post('/api/attendance/import-nevea-csv', async (request: FastifyRequest<{ Body: { rows?: any[] } }>) => {
+  const incomingRows = request.body?.rows || [
+    { studentName: 'Alexandre Martin', promo: 'Helpline 40', date: '2026-11-11', status: 'late', lateMinutes: 25 },
+    { studentName: 'Camille Girard', promo: 'Promotion XEFI', date: '2026-11-11', status: 'absent', justified: false },
+    { studentName: 'Lucas Mercier', promo: 'DW2025', date: '2026-11-11', status: 'present' },
+  ];
+
+  const generatedAlerts: any[] = [];
+  
+  for (const r of incomingRows) {
+    if (r.status === 'absent' && !r.justified) {
+      const alert = {
+        id: `alt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        studentName: r.studentName,
+        promotionName: r.promo,
+        type: 'absence_repetition',
+        severity: 'critical',
+        title: `Absence non justifiée : ${r.studentName} (${r.promo})`,
+        description: `Absence enregistrée via export Nevea. Aucun justificatif sous 48h.`,
+        status: 'open',
+        triggeredAt: 'À l instant',
+      };
+      generatedAlerts.push(alert);
+      inMemoryDb.alerts.unshift(alert as any);
+    } else if (r.status === 'late' && (r.lateMinutes || 0) >= 15) {
+      const alert = {
+        id: `alt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        studentName: r.studentName,
+        promotionName: r.promo,
+        type: 'retard_repetition',
+        severity: 'high',
+        delayMinutes: r.lateMinutes,
+        title: `Retard répété (+${r.lateMinutes} min) : ${r.studentName} (${r.promo})`,
+        description: `Retard consécutif détecté. Signalement tuteur recommandé.`,
+        status: 'open',
+        triggeredAt: 'À l instant',
+      };
+      generatedAlerts.push(alert);
+      inMemoryDb.alerts.unshift(alert as any);
+    }
+  }
+
+  return {
+    success: true,
+    processedCount: incomingRows.length,
+    alertsCreated: generatedAlerts.length,
+    newAlerts: generatedAlerts
+  };
+});
+
 server.post('/api/nevea/preview-csv', async () => {
   return {
     rowsTotal: 4,

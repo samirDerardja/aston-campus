@@ -1,4 +1,4 @@
-import { Promotion, Student, Trainer, ActionItem, Interview, ActionStatus, Cursus } from '../types';
+import { Promotion, Student, Trainer, ActionItem, Interview, ActionStatus, Cursus, StudentAlert, Partner } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -18,6 +18,72 @@ class ApiService {
     } catch {
       this.isOnline = false;
       return false;
+    }
+  }
+
+  // --- ALERTES ASSIDUITÉ EN TEMPS RÉEL (RETARDS, ABSENCES) ---
+  async getAlerts(status?: string, type?: string): Promise<StudentAlert[] | null> {
+    try {
+      const params = new URLSearchParams();
+      if (status) params.append('status', status);
+      if (type) params.append('type', type);
+      const url = `${API_BASE_URL}/alerts?${params.toString()}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async updateAlertStatus(id: string, status: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/alerts/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async convertAlertToAction(id: string): Promise<any | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/alerts/${id}/convert-to-action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async importAttendanceCsv(rows?: any[]): Promise<any | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/attendance/import-nevea-csv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  // --- PARTENAIRES ESN (HELPLINE, XEFI) ---
+  async getPartners(): Promise<Partner[] | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/partners`, { signal: AbortSignal.timeout(2000) });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
     }
   }
 

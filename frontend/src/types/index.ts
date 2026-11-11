@@ -58,6 +58,60 @@ export interface Cursus {
   skillBlocks?: SkillBlock[];
 }
 
+export type AlertType = 
+  | 'absence_repetition'    // Absences répétées
+  | 'retard_repetition'     // Retards répétés
+  | 'absence_longue'        // Longue absence consécutive
+  | 'justificatif_manquant' // Justificatif manquant sous 48h
+  | 'decrochage_general';   // Baisse assiduité < 80%
+
+export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+export type AlertStatus = 'open' | 'in_progress' | 'resolved' | 'dismissed';
+
+export interface StudentAlert {
+  id: string;
+  studentId: string;
+  studentName?: string;
+  promotionId: string;
+  promotionName?: string;
+  partnerName?: string;
+  type: AlertType;
+  severity: AlertSeverity;
+  title: string;
+  description: string;
+  status: AlertStatus;
+  actionId?: string;
+  triggeredAt: string;
+  resolvedAt?: string;
+  delayMinutes?: number;
+  unexcusedDays?: number;
+}
+
+export interface Partner {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  notes?: string;
+  contactName?: string;
+  contactEmail?: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  studentId: string;
+  studentName?: string;
+  promotionId: string;
+  date: string;
+  period: 'matin' | 'apres_midi' | 'journee';
+  status: 'present' | 'absent' | 'late' | 'excused';
+  lateMinutes?: number;
+  justified: boolean;
+  justificationReason?: string;
+  rawImportSource?: string;
+}
+
 export interface Promotion {
   id: string;
   code: string;
@@ -65,6 +119,8 @@ export interface Promotion {
   cursusId: string;
   cursusName?: string;
   cursus?: string;
+  partnerId?: string;
+  partnerName?: string;
   academicYear?: string;
   startDate: string;
   endDate: string;
@@ -80,6 +136,7 @@ export interface Promotion {
   totalHours?: number;
   totalDays?: number;
   rncpLevel?: string;
+  schedulePace?: string; // ex: "1 sem. école / 3 sem. entreprise"
   neveaReference?: string;
 }
 
@@ -96,6 +153,8 @@ export interface Student {
   status: StudentStatus;
   neveaReference?: string;
   attendanceRate: number; // Pourcentage assiduité indicatif
+  partnerName?: string;
+  alertsCount?: number;
 }
 
 export interface Trainer {
@@ -106,6 +165,10 @@ export interface Trainer {
   phone: string;
   specialties: string[];
   assignedPromotionIds: string[];
+  isLead?: boolean;              // Formateur référent officiel
+  leadTrainerId?: string;       // Rattaché à un formateur référent
+  leadTrainerName?: string;     // Nom du référent (ex: Mourad)
+  poleSpecialty?: string;       // ex: 'Pôle ESN Helpline & Partenaires'
   neveaReference?: string;
 }
 

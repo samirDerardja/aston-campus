@@ -1,6 +1,7 @@
 import { 
   UserProfile, Cursus, Promotion, Student, Trainer, 
-  CalendarEvent, Interview, Meeting, ActionItem, DocumentItem, AppNotification 
+  CalendarEvent, Interview, Meeting, ActionItem, DocumentItem, AppNotification,
+  StudentAlert, Partner
 } from '../types';
 
 export const CURRENT_USER: UserProfile = {
@@ -663,3 +664,104 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
     createdAt: '2026-11-11T08:00:00+01:00'
   }
 ];
+
+export const INITIAL_PARTNERS: Partner[] = [
+  {
+    id: '55555555-0000-0000-0000-000000000001',
+    code: 'HELPLINE',
+    name: 'Helpline',
+    type: 'ESN Partenaire Historique',
+    notes: 'Partenaire historique Aston - Cohortes dédiées Helpline 40/42/43 prises en charge directement pour l alternance. Référent formateurs officiel : Mourad.',
+    contactName: 'Service RH & Alternance Helpline',
+    contactEmail: 'alternance@helpline.fr'
+  },
+  {
+    id: '55555555-0000-0000-0000-000000000002',
+    code: 'XEFI',
+    name: 'XEFI',
+    type: 'Partenaire IT & Services',
+    notes: 'Partenaire IT réseau et infogérance - Cohorte dédiée XEFI. Référents : Mourad & Christelle.',
+    contactName: 'Responsable Campus XEFI',
+    contactEmail: 'campus@xefi.fr'
+  },
+  {
+    id: '55555555-0000-0000-0000-000000000003',
+    code: 'CAPGEMINI',
+    name: 'Capgemini',
+    type: 'ESN Partenaire',
+    notes: 'Pôle Développement & Architecture Cloud.',
+    contactName: 'Talent Acquisition',
+    contactEmail: 'campus@capgemini.com'
+  },
+  {
+    id: '55555555-0000-0000-0000-000000000004',
+    code: 'SOPRA',
+    name: 'Sopra Steria',
+    type: 'ESN Partenaire',
+    notes: 'Pôle Systèmes d information & Cybersécurité.',
+    contactName: 'Campus Manager',
+    contactEmail: 'recrutement@soprasteria.com'
+  }
+];
+
+export const INITIAL_ALERTS: StudentAlert[] = [
+  {
+    id: 'alt-01',
+    studentId: '44444444-0000-0000-0000-000000000001',
+    studentName: 'Alexandre Martin',
+    promotionId: '33333333-0000-0000-0000-000000000010',
+    promotionName: 'Helpline 40',
+    partnerName: 'Helpline',
+    type: 'retard_repetition',
+    severity: 'high',
+    delayMinutes: 85,
+    title: 'Retards répétés : Alexandre Martin (Helpline 40)',
+    description: '4 retards enregistrés sur la semaine de cours en centre (cumul 85 min). Contacter le tuteur Helpline.',
+    status: 'open',
+    triggeredAt: 'Aujourd\'hui à 09:15'
+  },
+  {
+    id: 'alt-02',
+    studentId: '44444444-0000-0000-0000-000000000002',
+    studentName: 'Camille Girard',
+    promotionId: '33333333-0000-0000-0000-000000000013',
+    promotionName: 'Promotion XEFI',
+    partnerName: 'XEFI',
+    type: 'absence_repetition',
+    severity: 'critical',
+    unexcusedDays: 3,
+    title: 'Absences répétées non justifiées : Camille Girard (XEFI)',
+    description: '3 demi-journées d absence consécutives sans justificatif sous 48h. Risque rupture de contrat.',
+    status: 'open',
+    triggeredAt: 'Aujourd\'hui à 08:30'
+  },
+  {
+    id: 'alt-03',
+    studentId: '44444444-0000-0000-0000-000000000003',
+    studentName: 'Youssef Benali',
+    promotionId: '33333333-0000-0000-0000-000000000016',
+    promotionName: 'ESD 56',
+    partnerName: 'Orange Cyberdefense',
+    type: 'justificatif_manquant',
+    severity: 'medium',
+    title: 'Justificatif manquant : Youssef Benali (ESD 56)',
+    description: 'Absence du mardi déclarée pour motif médical mais certificat employeur non transmis sous 48h.',
+    status: 'open',
+    triggeredAt: 'Hier à 16:45'
+  },
+  {
+    id: 'alt-04',
+    studentId: '44444444-0000-0000-0000-000000000004',
+    studentName: 'Emma Leroy',
+    promotionId: '33333333-0000-0000-0000-000000000014',
+    promotionName: 'TSRS 61',
+    partnerName: 'Thales Defence',
+    type: 'decrochage_general',
+    severity: 'high',
+    title: 'Alerte assiduité sous le seuil Qualiopi (74%) : Emma Leroy (TSRS 61)',
+    description: 'Baisse continue de présence constatée sur les deux dernières semaines. Entretien de recadrage recommandé.',
+    status: 'in_progress',
+    triggeredAt: 'Hier à 11:20'
+  }
+];
+

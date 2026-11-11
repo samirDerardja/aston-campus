@@ -2,12 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   UserProfile, UserRole, Promotion, Student, Trainer, CalendarEvent, 
   Interview, Meeting, ActionItem, DocumentItem, AppNotification, ActionStatus, ActionPriority, InterviewType,
-  Cursus
+  Cursus, StudentAlert, Partner, AlertStatus
 } from '../types';
 import { 
   CURRENT_USER, INITIAL_PROMOTIONS, INITIAL_STUDENTS, INITIAL_TRAINERS,
   INITIAL_EVENTS, INITIAL_INTERVIEWS, INITIAL_MEETINGS, INITIAL_ACTIONS,
-  INITIAL_DOCUMENTS, INITIAL_NOTIFICATIONS, INITIAL_CURSUS
+  INITIAL_DOCUMENTS, INITIAL_NOTIFICATIONS, INITIAL_CURSUS,
+  INITIAL_ALERTS, INITIAL_PARTNERS
 } from '../data/mockData';
 import { api } from '../services/api';
 
@@ -30,6 +31,8 @@ interface AppContextType {
   documents: DocumentItem[];
   notifications: AppNotification[];
   unreadNotificationsCount: number;
+  alerts: StudentAlert[];
+  partners: Partner[];
   
   // Actions Métier
   addInterview: (data: {
@@ -69,6 +72,12 @@ interface AppContextType {
   
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
+
+  // Alertes Assiduité (Retards, Absences répétées, Décrochage)
+  convertAlertToAction: (alertId: string) => Promise<void>;
+  dismissAlert: (alertId: string) => Promise<void>;
+  updateAlertStatus: (alertId: string, status: AlertStatus) => Promise<void>;
+  importAttendanceData: (rows?: any[]) => Promise<any>;
 
   // Command palette
   isCommandPaletteOpen: boolean;
@@ -122,6 +131,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
   });
 
+  const [alerts, setAlerts] = useState<StudentAlert[]>(() => {
+    const saved = localStorage.getItem('aston_alerts');
+    return saved ? JSON.parse(saved) : INITIAL_ALERTS;
+  });
+
+  const [partners, setPartners] = useState<Partner[]>(() => {
+    const saved = localStorage.getItem('aston_partners');
+    return saved ? JSON.parse(saved) : INITIAL_PARTNERS;
+  });
+
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Synchronisation backend Fastify & Base de données
@@ -131,12 +150,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsBackendConnected(isAlive);
 
       if (isAlive) {
-        const [remotePromos, remoteStudents, remoteActions, remoteInterviews, remoteCursus] = await Promise.all([
+        const [remotePromos, remoteStudents, remoteActions, remoteInterviews, remoteCursus, remoteAlerts, remotePartners] = await Promise.all([
           api.getPromotions(),
           api.getStudents(),
           api.getActions(),
           api.getInterviews(),
           api.getCursus(),
+          api.getAlerts(),
+          api.getPartners(),
         ]);
 
         if (remotePromos && remotePromos.length > 0) setPromotions(remotePromos);
@@ -144,6 +165,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (remoteActions && remoteActions.length > 0) setActions(remoteActions as any);
         if (remoteInterviews && remoteInterviews.length > 0) setInterviews(remoteInterviews as any);
         if (remoteCursus && remoteCursus.length > 0) setCursusList(remoteCursus);
+        if (remoteAlerts && remoteAlerts.length > 0) setAlerts(remoteAlerts);
+        if (remotePartners && remotePartners.length > 0) setPartners(remotePartners);
       }
     };
 
@@ -203,6 +226,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('aston_notifications', JSON.stringify(notifications));
   }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('aston_alerts', JSON.stringify(alerts));
+  }, [alerts]);
+
+  useEffect(() => {
+    localStorage.setItem('aston_partners', JSON.stringify(partners));
+  }, [partners]);
 
   // Command palette keyboard shortcut (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -410,6 +441,79 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
+  const updateAlertStatus = async (alertId: string, status: AlertStatus) => {
+    setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, status } : a));
+    await api.updateAlertStatus(alertId, status);
+  };
+
+  const dismissAlert = async (alertId: string) => {
+    await updateAlertStatus(alertId, 'dismissed');
+  };
+
+  const convertAlertToAction = async (alertId: string) => {
+    const alert = alerts.find(a => a.id === alertId);
+    if (!alert) return;
+
+    // Appel API backend
+    const res = await api.convertAlertToAction(alertId);
+    if (res && res.action) {
+      setActions(prev => [res.action, ...prev]);
+    } else {
+      // Repli local en mode autonome
+      const newAction: ActionItem = {
+        id: `act-${Date.now()}`,
+        title: `Suivi d'assiduité : ${alert.title}`,
+        description: `${alert.description} (Généré automatiquement depuis l'alerte d'assiduité temps réel)`,
+        promotionId: alert.promotionId,
+        promotionName: alert.promotionName || 'Promotion',
+        studentId: alert.studentId,
+        studentName: alert.studentName,
+        assigneeId: currentUser.id,
+        assigneeName: `${currentUser.firstName} ${currentUser.lastName}`,
+        creatorId: currentUser.id,
+        creatorName: `${currentUser.firstName} ${currentUser.lastName}`,
+        priority: alert.severity === 'critical' ? 'urgent' : alert.severity === 'high' ? 'high' : 'medium',
+        status: 'todo',
+        dueDate: new Date(Date.now() + 48 * 3600 * 1000).toISOString().split('T')[0],
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+      setActions(prev => [newAction, ...prev]);
+    }
+
+    // Basculer l'alerte en 'in_progress'
+    setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, status: 'in_progress' } : a));
+
+    // Notification
+    const newNotif: AppNotification = {
+      id: `notif-${Date.now()}`,
+      type: 'action_assigned',
+      title: 'Action corrective créée',
+      message: `Action de suivi créée pour ${alert.studentName || 'l\'apprenant'} (${alert.title}).`,
+      actionUrl: '/actions',
+      isRead: false,
+      createdAt: new Date().toISOString()
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  const importAttendanceData = async (rows?: any[]) => {
+    const result = await api.importAttendanceCsv(rows);
+    if (result && result.alertsCreated && result.alertsCreated.length > 0) {
+      setAlerts(prev => [...result.alertsCreated, ...prev]);
+      const newNotif: AppNotification = {
+        id: `notif-${Date.now()}`,
+        type: 'action_assigned',
+        title: 'Import Émargements Nevea synchronisé',
+        message: `${result.alertsCreated.length} alertes d'assiduité générées suite à l'importation Nevea.`,
+        actionUrl: '/dashboard',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+      setNotifications(prev => [newNotif, ...prev]);
+    }
+    return result;
+  };
+
   const unreadNotificationsCount = notifications.filter(n => !n.isRead).length;
 
   return (
@@ -432,6 +536,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       documents,
       notifications,
       unreadNotificationsCount,
+      alerts,
+      partners,
       addInterview,
       updateInterviewReport,
       updateActionStatus,
@@ -439,6 +545,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       convertDecisionToAction,
       markNotificationAsRead,
       markAllNotificationsAsRead,
+      convertAlertToAction,
+      dismissAlert,
+      updateAlertStatus,
+      importAttendanceData,
       isCommandPaletteOpen,
       setCommandPaletteOpen
     }}>
