@@ -231,7 +231,7 @@ export const ActionsPage: React.FC = () => {
     },
     {
       id: 'act-21',
-      title: 'Émargements électroniques Nevea',
+      title: 'Contrôle des émargements électroniques',
       promotion: 'SIO2025 • BTS SIO',
       responsible: 'M. Benali',
       avatarText: 'MB',

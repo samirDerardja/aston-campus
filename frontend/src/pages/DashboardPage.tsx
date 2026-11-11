@@ -228,7 +228,7 @@ export const DashboardPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-bold text-slate-900">Prochains rendez-vous</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Planning synchronisé Nevea & campus</p>
+                <p className="text-xs text-slate-500 mt-0.5">Planning officiel des cours & séances du campus</p>
               </div>
               <button 
                 onClick={() => navigate('/planning')}

@@ -37,13 +37,13 @@ export const PlanningPage: React.FC = () => {
             Planning consolidé
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Calendrier des cours Nevea ERP et événements de coordination Aston Campus
+            Calendrier des cours officiels et événements de coordination Aston Campus
           </p>
         </div>
 
         <div className="flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#00D084]/15 border border-[#00D084]/30 text-xs text-emerald-800 font-bold shadow-2xs backdrop-blur-md">
           <span className="w-2 h-2 rounded-full bg-[#00D084] animate-pulse"></span>
-          <span>Synchronisé avec Nevea</span>
+          <span>Planning officiel validé</span>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ export const PlanningPage: React.FC = () => {
                 source: 'nevea',
                 hours: '08:30 - 12:00',
                 room: 'Lab Tech 302',
-                trainer: 'Julien Leroy (Formateur Nevea)'
+                trainer: 'Julien Leroy (Formateur)'
               })}
               className="absolute top-[8px] left-[17.5%] w-[14.5%] h-[80px] bg-blue-500/10 backdrop-blur-md border border-blue-500/25 rounded-2xl p-2.5 cursor-pointer shadow-2xs hover:border-blue-500/50 transition-all hover:scale-101"
             >
@@ -282,11 +282,11 @@ export const PlanningPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-white/60 text-xs">
           <div className="flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-            <span className="text-slate-600 font-medium">Cours officiel (Nevea ERP - Protégé)</span>
+            <span className="text-slate-600 font-medium">Cours officiel du cursus (Protégé)</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#00D084]"></span>
-            <span className="text-slate-600 font-medium">TP & Lab Technique (Nevea)</span>
+            <span className="text-slate-600 font-medium">TP & Ateliers pratiques</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
@@ -310,7 +310,7 @@ export const PlanningPage: React.FC = () => {
                     ? 'bg-blue-500/10 text-blue-700 border border-blue-500/20' 
                     : 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
                 }`}>
-                  {selectedEvent.source === 'nevea' ? 'NEVEA ERP (LECTURE SEULE)' : 'ASTON LOCAL'}
+                  {selectedEvent.source === 'nevea' ? 'COURS OFFICIEL (LECTURE SEULE)' : 'ASTON LOCAL'}
                 </span>
                 <h3 className="text-base font-extrabold text-slate-900 mt-2">
                   {selectedEvent.title}
@@ -346,7 +346,7 @@ export const PlanningPage: React.FC = () => {
             {selectedEvent.source === 'nevea' && (
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 flex items-start space-x-2">
                 <Lock className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
-                <span>Ce cours est extrait de Nevea et protégé contre les modifications non autorisées (règle ASTON_ERR_READONLY).</span>
+                <span>Ce cours fait partie du programme officiel validé et est protégé en lecture seule.</span>
               </div>
             )}
 

@@ -555,7 +555,7 @@ export const INITIAL_EVENTS: CalendarEvent[] = [
   {
     id: 'evt-1',
     title: 'Dév. Web DW2025',
-    description: 'Cours officiel Nevea (lecture seule)',
+    description: 'Cours officiel du cursus (lecture seule)',
     startTime: '2026-11-10T08:00:00+01:00',
     endTime: '2026-11-10T10:30:00+01:00',
     promotionId: 'promo-dw-2025',
@@ -568,7 +568,7 @@ export const INITIAL_EVENTS: CalendarEvent[] = [
   {
     id: 'evt-2',
     title: 'Base de données DW2025',
-    description: 'Cours officiel Nevea (lecture seule)',
+    description: 'Cours officiel du cursus (lecture seule)',
     startTime: '2026-11-10T11:00:00+01:00',
     endTime: '2026-11-10T13:00:00+01:00',
     promotionId: 'promo-dw-2025',

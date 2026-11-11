@@ -38,10 +38,10 @@ export const Header: React.FC = () => {
           <span className="text-[#0F172A] font-extrabold truncate">{getBreadcrumb()}</span>
         </div>
 
-        {/* Sync badge Nevea - Luxury Glass Badge */}
+        {/* Status badge - Luxury Glass Badge */}
         <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#00D084]/10 text-emerald-800 border border-[#00D084]/25 text-[10px] font-bold font-mono tracking-wider backdrop-blur-md shadow-2xs">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00D084] animate-pulse"></span>
-          <span>SYNCHRONISÉ AVEC NEVEA</span>
+          <span>PLANNING & SUIVI ACTIF</span>
         </div>
 
         {/* Backend & Database Status Badge */}

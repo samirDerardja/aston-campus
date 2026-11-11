@@ -217,9 +217,9 @@ export const PromotionsPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between pb-2 border-b border-slate-200/50">
-                      <span className="text-slate-500">Code Nevea :</span>
+                      <span className="text-slate-500">Référence administrative :</span>
                       <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                        NEVEA-DW-2025
+                        DW-2025
                       </span>
                     </div>
 

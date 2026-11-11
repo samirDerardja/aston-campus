@@ -6,15 +6,15 @@ import {
 
 export const ImportNeveaPage: React.FC = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [fileName, setFileName] = useState<string>('export_nevea_apprenants_nov2026.csv');
+  const [fileName, setFileName] = useState<string>('export_effectifs_apprenants_nov2026.csv');
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Exemple de données prévisualisées simulées pour l'assistant
   const previewRows = [
-    { neveaId: 'NEVEA-ST-101', nom: 'Martin', prenom: 'Alexandre', promo: 'PROMO-TSRS-2025-A', statut: 'Existant (Mise à jour)' },
-    { neveaId: 'NEVEA-ST-102', nom: 'Girard', prenom: 'Camille', promo: 'PROMO-TSRS-2025-A', statut: 'Existant (Mise à jour)' },
-    { neveaId: 'NEVEA-ST-106', nom: 'Belkacem', prenom: 'Sami', promo: 'PROMO-ESD-2025-P1', statut: 'Nouveau (Création)' },
-    { neveaId: 'NEVEA-ST-107', nom: 'Faure', prenom: 'Inès', promo: 'PROMO-ESD-2025-P1', statut: 'Nouveau (Création)' },
+    { extId: 'REF-ST-101', nom: 'Martin', prenom: 'Alexandre', promo: 'PROMO-TSRS-2025-A', statut: 'Existant (Mise à jour)' },
+    { extId: 'REF-ST-102', nom: 'Girard', prenom: 'Camille', promo: 'PROMO-TSRS-2025-A', statut: 'Existant (Mise à jour)' },
+    { extId: 'REF-ST-106', nom: 'Belkacem', prenom: 'Sami', promo: 'PROMO-ESD-2025-P1', statut: 'Nouveau (Création)' },
+    { extId: 'REF-ST-107', nom: 'Faure', prenom: 'Inès', promo: 'PROMO-ESD-2025-P1', statut: 'Nouveau (Création)' },
   ];
 
   const handleSimulateImport = () => {
@@ -29,9 +29,9 @@ export const ImportNeveaPage: React.FC = () => {
     <div className="space-y-6 max-w-4xl">
       {/* Entête */}
       <div>
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Passerelle Nevea — Import Administratif</h1>
+        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Passerelle Administrative — Import des Effectifs</h1>
         <p className="text-xs text-slate-500">
-          Assistant d'importation des effectifs administratifs depuis Nevea (Étape A — Fichiers CSV)
+          Assistant d'importation et de synchronisation des effectifs administratifs (Format CSV)
         </p>
       </div>
 
@@ -61,7 +61,7 @@ export const ImportNeveaPage: React.FC = () => {
       {/* ÉTAPE 1 : SÉLECTION DU FICHIER */}
       {step === 1 && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
-          <h2 className="text-sm font-bold text-slate-900">1. Sélection du fichier d'export Nevea</h2>
+          <h2 className="text-sm font-bold text-slate-900">1. Sélection du fichier d'export</h2>
           <div className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl p-8 text-center cursor-pointer transition bg-slate-50/50">
             <Upload className="w-8 h-8 text-blue-500 mx-auto mb-2" />
             <p className="text-xs font-semibold text-slate-800">Glissez-déposez le fichier CSV ou cliquez pour sélectionner</p>
@@ -88,16 +88,16 @@ export const ImportNeveaPage: React.FC = () => {
       {step === 2 && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
           <h2 className="text-sm font-bold text-slate-900">2. Correspondance des colonnes (Mapping)</h2>
-          <p className="text-xs text-slate-500">Associez les colonnes de votre fichier Nevea aux champs cibles d'Aston Campus.</p>
+          <p className="text-xs text-slate-500">Associez les colonnes de votre fichier aux champs cibles d'Aston Campus.</p>
 
           <div className="space-y-3 text-xs">
             <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-lg items-center">
               <div>
                 <span className="font-semibold text-slate-800">Champ Aston Campus</span>
-                <p className="text-[11px] text-slate-500">Identifiant distant Nevea (clé unique)</p>
+                <p className="text-[11px] text-slate-500">Identifiant externe (clé unique)</p>
               </div>
               <select className="bg-white border border-slate-200 rounded p-1.5 font-mono text-xs">
-                <option>nevea_student_id</option>
+                <option>external_student_id</option>
               </select>
             </div>
 
@@ -170,7 +170,7 @@ export const ImportNeveaPage: React.FC = () => {
             <table className="w-full text-left">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
                 <tr>
-                  <th className="p-2.5">ID Nevea</th>
+                  <th className="p-2.5">ID Externe</th>
                   <th className="p-2.5">Nom</th>
                   <th className="p-2.5">Prénom</th>
                   <th className="p-2.5">Promotion</th>
@@ -180,7 +180,7 @@ export const ImportNeveaPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {previewRows.map((r, i) => (
                   <tr key={i}>
-                    <td className="p-2.5 font-mono text-[11px] text-slate-500">{r.neveaId}</td>
+                    <td className="p-2.5 font-mono text-[11px] text-slate-500">{r.extId}</td>
                     <td className="p-2.5 font-semibold text-slate-900">{r.nom}</td>
                     <td className="p-2.5 text-slate-700">{r.prenom}</td>
                     <td className="p-2.5 text-slate-700 font-mono text-[11px]">{r.promo}</td>
@@ -232,7 +232,7 @@ export const ImportNeveaPage: React.FC = () => {
           <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
             <CheckCircle2 className="w-6 h-6" />
           </div>
-          <h2 className="text-base font-bold text-slate-900">Importation Nevea Réalisée avec Succès</h2>
+          <h2 className="text-base font-bold text-slate-900">Importation des Effectifs Réalisée avec Succès</h2>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             Le fichier CSV a été analysé et synchronisé avec la base Supabase PostgreSQL.
           </p>
@@ -267,11 +267,10 @@ export const ImportNeveaPage: React.FC = () => {
       <div className="bg-slate-900 text-slate-300 p-5 rounded-xl border border-slate-800 text-xs space-y-2">
         <div className="flex items-center space-x-2 text-blue-400 font-semibold">
           <ShieldAlert className="w-4 h-4" />
-          <span>Étape B — Connecteur API Nevea Direct (Statut : En attente d'agrément)</span>
+          <span>Étape B — Connecteur API Administratif (Statut : En attente d'agrément)</span>
         </div>
         <p className="text-[11px] text-slate-400 leading-relaxed">
-          Conformément aux instructions d'intégration, aucun endpoint ou clé secrète fictive n'a été inventé. 
-          L'interface d'adaptateur <code>INeveaConnector</code> est prête et restera désactivée tant que la documentation d'API officielle et les habilitations de l'établissement n'auront pas été fournies.
+          La structure d'importation et les modèles de données sous-jacents sont préservés pour l'intégration des prochaines fonctionnalités administratives.
         </p>
       </div>
     </div>

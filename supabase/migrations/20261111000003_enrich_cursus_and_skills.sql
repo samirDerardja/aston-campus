@@ -247,3 +247,4 @@ SELECT
     '[]'::json
   ) AS skill_blocks
 FROM cursus c;
+
