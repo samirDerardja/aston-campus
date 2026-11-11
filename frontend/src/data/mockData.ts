@@ -14,13 +14,145 @@ export const CURRENT_USER: UserProfile = {
 };
 
 export const INITIAL_CURSUS: Cursus[] = [
-  { id: 'cur-1', code: 'DW', title: 'Développeur Web', rncpLevel: 'BTS (Niveau 5)' },
-  { id: 'cur-2', code: 'TSRS', title: 'Technicien Systèmes Réseaux & Sécurité', rncpLevel: 'Niveau 5 (Bac+2)' },
-  { id: 'cur-3', code: 'BTS-CIEL', title: 'BTS CIEL Cybersécurité, Informatique, Eléctronique', rncpLevel: 'Niveau 5 (Bac+2)' },
-  { id: 'cur-4', code: 'PBNCLC', title: 'Product builder no code low code', rncpLevel: 'Niveau 6 (Bac+3)' },
-  { id: 'cur-5', code: 'ASRBD', title: 'Administrateur systèmes, réseaux et bases de données', rncpLevel: 'Niveau 6 (Bac+3/4)' },
-  { id: 'cur-6', code: 'ESD', title: 'Expert En Sécurité Digitale', rncpLevel: 'Niveau 7 (Bac+5)' },
-  { id: 'cur-7', code: 'DPI', title: 'Directeur De Projets Informatique', rncpLevel: 'Niveau 7 (Bac+5)' }
+  { 
+    id: 'cur-1', 
+    code: 'TSN', 
+    title: 'Technicien Support en Numérique', 
+    shortName: 'Technicien Support',
+    type: 'Cursus Diplômant',
+    modality: 'Alternance',
+    rncpLevel: 'Titre RNCP Niveau 4 (Bac)', 
+    totalHours: 420,
+    totalDays: 60,
+    status: 'active',
+    description: 'Le cursus de Technicien support en numérique a pour objectif de vous permettre d acquérir l ensemble des compétences nécessaires pour assurer le support des utilisateurs en assurant l installation et le support technique d équipement numérique, ainsi que la mise en fonction de logiciels.',
+    tags: ['#Support', '#Helpdesk', '#Hardware', '#AssistanceUtilisateurs'],
+    skillBlocks: [
+      { id: 'sb-1-1', blockNumber: 1, title: 'BLOC 1 - Assistance utilisateurs', description: 'Assurer l assistance auprès des utilisateurs des équipements numériques et logiciels associés' },
+      { id: 'sb-1-2', blockNumber: 2, title: 'BLOC 2 - Déploiement matériels', description: 'Déploiement de matériels numériques et logiciels associés' },
+      { id: 'sb-1-3', blockNumber: 3, title: 'BLOC 3 - Exploitation équipements', description: 'Exploitation d équipements numériques et logiciels associés' }
+    ]
+  },
+  { 
+    id: 'cur-2', 
+    code: 'TSRS', 
+    title: 'Technicien Systèmes Réseaux & Sécurité', 
+    shortName: 'TSRS',
+    type: 'Cursus Diplômant',
+    modality: 'Alternance',
+    rncpLevel: 'Titre RNCP Niveau 5 (Bac+2)', 
+    totalHours: 910,
+    totalDays: 130,
+    status: 'active',
+    description: 'Le titulaire du titre est acteur principal quant à la formation des utilisateurs sur l ensemble de leur poste de travail et sur les risques engendrés dans un environnement connecté.',
+    tags: ['#Déploiement', '#Installation', '#Configuration', '#Sécurisation', '#Scripting'],
+    skillBlocks: [
+      { id: 'sb-2-1', blockNumber: 1, title: 'BLOC 1 - Déploiement matériels & réseau', description: 'Déployer les matériels, les systèmes et le réseau' },
+      { id: 'sb-2-2', blockNumber: 2, title: 'BLOC 2 - Administration serveurs', description: 'Administrer des serveurs hétérogènes et un réseau multi-sites' },
+      { id: 'sb-2-3', blockNumber: 3, title: 'BLOC 3 - Sécurisation environnement', description: 'Sécuriser l environnement numérique d exploitation' },
+      { id: 'sb-2-4', blockNumber: 4, title: 'BLOC 4 - Entretien parc informatique', description: 'Entretenir un parc informatique et diagnostiquer les pannes' },
+      { id: 'sb-2-5', blockNumber: 5, title: 'BLOC 5 - Support technique utilisateurs', description: 'Assurer le support technique auprès des utilisateurs' }
+    ]
+  },
+  { 
+    id: 'cur-3', 
+    code: 'BTS-CIEL', 
+    title: 'BTS CIEL Cybersécurité, Informatique, Électronique', 
+    shortName: 'BTS CIEL',
+    type: 'Cursus Diplômant',
+    modality: 'Alternance',
+    rncpLevel: 'Titre RNCP Niveau 5 (Bac+2)', 
+    totalHours: 1351,
+    totalDays: 219,
+    status: 'active',
+    description: 'Vous souhaitez participer au déploiement de l industrie 4.0, en intervenant sur les réseaux, la cybersécurité et la valorisation des données ?',
+    tags: ['#BTS', '#CIEL', '#Cybersécurité', '#Informatique'],
+    skillBlocks: [
+      { id: 'sb-3-1', blockNumber: 1, title: 'BLOC 1 - Étude et conception réseaux', description: 'Étude et conception de réseaux informatiques' },
+      { id: 'sb-3-2', blockNumber: 2, title: 'BLOC 2 - Exploitation et maintenance', description: 'Exploitation et maintenance de réseaux informatiques' },
+      { id: 'sb-3-3', blockNumber: 3, title: 'BLOC 3 - Valorisation données & cybersécurité', description: 'Valorisation de la donnée et cybersécurité' }
+    ]
+  },
+  { 
+    id: 'cur-4', 
+    code: 'PB-NCLC', 
+    title: 'Product Builder No Code Low Code', 
+    shortName: 'Product Builder',
+    type: 'Cursus Diplômant',
+    modality: 'Alternance',
+    rncpLevel: 'Titre RNCP Niveau 6 (Bac+3/4)', 
+    totalHours: 402,
+    totalDays: 58,
+    status: 'upcoming', // PROGRAMME GELÉ POUR L'ANNÉE PROCHAINE
+    description: 'Le Product Builder No Code / Low Code conçoit des applications, des outils digitaux et des automatisations. (Programme gelé et en révision pour la prochaine rentrée académique).',
+    tags: ['#NoCode', '#LowCode', '#ProductBuilder', '#Automatisation', '#InnovationDigitale'],
+    skillBlocks: [
+      { id: 'sb-4-1', blockNumber: 1, title: 'BLOC 1 - Cadrage & pilotage No Code', description: 'Cadrer et piloter les projets No code / Low Code' },
+      { id: 'sb-4-2', blockNumber: 2, title: 'BLOC 2 - Développement & intégration', description: 'Développer et intégrer des applications No code' },
+      { id: 'sb-4-3', blockNumber: 3, title: 'BLOC 3 - Qualité & sécurité production', description: 'Garantir la qualité, la sécurité et le déploiement' },
+      { id: 'sb-4-4', blockNumber: 4, title: 'BLOC 4 - Maintenance évolutive', description: 'Accompagner les utilisateurs et assurer la maintenance' }
+    ]
+  },
+  { 
+    id: 'cur-5', 
+    code: 'ASRBD', 
+    title: 'Administrateur Systèmes, Réseaux et Bases de Données', 
+    shortName: 'Admin Systèmes & BD',
+    type: 'Cursus Diplômant',
+    modality: 'Alternance',
+    rncpLevel: 'Titre RNCP Niveau 6 (Bac+3/4)', 
+    totalHours: 910,
+    totalDays: 130,
+    status: 'active',
+    description: 'Les compétences acquises au cours de la formation permettent d administrer et sécuriser le système d information et les bases de données.',
+    tags: ['#Architecture', '#Cloud', '#SI', '#Basesdedonnées', '#Infrastructure'],
+    skillBlocks: [
+      { id: 'sb-5-1', blockNumber: 1, title: 'BLOC 1 - Administrer le SI', description: 'Administrer le système d information' },
+      { id: 'sb-5-2', blockNumber: 2, title: 'BLOC 2 - Gérer le SI', description: 'Gérer les systèmes d information' },
+      { id: 'sb-5-3', blockNumber: 3, title: 'BLOC 3 - Sécurisation SI', description: 'Définir la politique de sécurisation du système d information' }
+    ]
+  },
+  { 
+    id: 'cur-6', 
+    code: 'ESD', 
+    title: 'Expert En Sécurité Digitale', 
+    shortName: 'Expert Sécurité Digitale',
+    type: 'Cursus Diplômant',
+    modality: 'Alternance',
+    rncpLevel: 'Titre RNCP Niveau 7 - Mastère II', 
+    totalHours: 560,
+    totalDays: 80,
+    status: 'active',
+    description: 'Former des experts capables d anticiper les menaces, d auditer la sécurité des SI et de riposter face aux cyber-attaques.',
+    tags: ['#Cybersécurité', '#Cyberdéfense'],
+    skillBlocks: [
+      { id: 'sb-6-1', blockNumber: 1, title: 'BLOC 1 - Prévention menaces cyber', description: 'Prévenir et anticiper les menaces cyber' },
+      { id: 'sb-6-2', blockNumber: 2, title: 'BLOC 2 - Audit sécurité SI', description: 'Auditer la sécurité des systèmes d information' },
+      { id: 'sb-6-3', blockNumber: 3, title: 'BLOC 3 - Remédiation après attaque', description: 'Analyser et sécuriser après une cyber-attaque' },
+      { id: 'sb-6-4', blockNumber: 4, title: 'BLOC 4 - Sécurité organisationnelle', description: 'Piloter la sécurité organisationnelle' }
+    ]
+  },
+  { 
+    id: 'cur-7', 
+    code: 'DPI', 
+    title: 'Directeur De Projets Informatique', 
+    shortName: 'Directeur de Projets',
+    type: 'Cursus Diplômant',
+    modality: 'Alternance',
+    rncpLevel: 'Titre RNCP Niveau 7 - Mastère II', 
+    totalHours: 490,
+    totalDays: 70,
+    status: 'active',
+    description: 'Le cursus de Directeur de projets informatique permet d acquérir les compétences de gouvernance, pilotage de ressources et management des risques.',
+    tags: ['#Digital', '#Agilité', '#UX/UI', '#DesignThinking', '#Chefferie de Projet'],
+    skillBlocks: [
+      { id: 'sb-7-1', blockNumber: 1, title: 'BLOC 1 - Gouvernance projets IT', description: 'Gouvernance des projets informatiques' },
+      { id: 'sb-7-2', blockNumber: 2, title: 'BLOC 2 - Pilotage ressources', description: 'Piloter les ressources financières et humaines' },
+      { id: 'sb-7-3', blockNumber: 3, title: 'BLOC 3 - Management risques', description: 'Manager les risques des Projets Informatiques' },
+      { id: 'sb-7-4', blockNumber: 4, title: 'BLOC 4 - Qualité & processus', description: 'Manager les processus et la qualité' },
+      { id: 'sb-7-5', blockNumber: 5, title: 'BLOC 5 - Communication', description: 'Communiquer avec les acteurs des projets' }
+    ]
+  }
 ];
 
 export const INITIAL_PROMOTIONS: Promotion[] = [
@@ -39,6 +171,9 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     referentTrainerName: 'Thomas Moreau',
     studentsCount: 24,
     status: 'active',
+    totalHours: 910,
+    totalDays: 130,
+    rncpLevel: 'Titre RNCP Niveau 5 (Bac+2)',
     neveaReference: 'NEVEA-DW-2025'
   },
   {
@@ -56,6 +191,9 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     referentTrainerName: 'Thomas Moreau',
     studentsCount: 28,
     status: 'active',
+    totalHours: 910,
+    totalDays: 130,
+    rncpLevel: 'Titre RNCP Niveau 5 (Bac+2)',
     neveaReference: 'NEVEA-TSRS-901'
   },
   {
@@ -73,6 +211,9 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     referentTrainerName: 'Thomas Moreau',
     studentsCount: 32,
     status: 'active',
+    totalHours: 560,
+    totalDays: 80,
+    rncpLevel: 'Titre RNCP Niveau 7 - Mastère II',
     neveaReference: 'NEVEA-ESD-902'
   },
   {
@@ -80,16 +221,20 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     code: 'PB2025',
     name: 'Product Builder No-Code 2025',
     cursusId: 'cur-4',
-    cursusName: 'Product builder no code low code',
+    cursusName: 'Product Builder No Code Low Code',
     academicYear: '2025-2026',
-    startDate: '03 nov. 2025',
-    endDate: '31 oct. 2026',
+    startDate: '03 nov. 2026',
+    endDate: '31 oct. 2027',
     coordinatorId: 'usr-samir-01',
     coordinatorName: 'Sophie Bernard',
     referentTrainerId: 'tr-02',
     referentTrainerName: 'Julie Roux',
-    studentsCount: 22,
-    status: 'active',
+    studentsCount: 0,
+    status: 'upcoming', // GELÉ ET À REVOIR POUR LA PROCHAINE RENTRÉE (PROCHAINEMENT)
+    isFrozen: true,
+    totalHours: 402,
+    totalDays: 58,
+    rncpLevel: 'Titre RNCP Niveau 6 (Bac+3/4)',
     neveaReference: 'NEVEA-PB-903'
   },
   {
@@ -105,6 +250,9 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     coordinatorName: 'Samir Derardja',
     studentsCount: 18,
     status: 'upcoming',
+    totalHours: 490,
+    totalDays: 70,
+    rncpLevel: 'Titre RNCP Niveau 7 - Mastère II',
     neveaReference: 'NEVEA-DPI-904'
   }
 ];

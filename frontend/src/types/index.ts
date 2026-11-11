@@ -32,11 +32,30 @@ export interface UserProfile {
   phone?: string;
 }
 
+export type CursusStatus = 'active' | 'upcoming' | 'frozen' | 'archived';
+
+export interface SkillBlock {
+  id: string;
+  cursusId?: string;
+  blockNumber: number;
+  title: string;
+  description?: string;
+}
+
 export interface Cursus {
   id: string;
   code: string;
   title: string;
+  shortName?: string;
+  type?: string;
+  modality?: string;
   rncpLevel: string;
+  totalHours: number;
+  totalDays: number;
+  status: CursusStatus;
+  description?: string;
+  tags?: string[];
+  skillBlocks?: SkillBlock[];
 }
 
 export interface Promotion {
@@ -44,16 +63,23 @@ export interface Promotion {
   code: string;
   name: string;
   cursusId: string;
-  cursusName: string;
-  academicYear: string;
+  cursusName?: string;
+  cursus?: string;
+  academicYear?: string;
   startDate: string;
   endDate: string;
-  coordinatorId: string;
-  coordinatorName: string;
+  coordinatorId?: string;
+  coordinatorName?: string;
+  coordinator?: string;
   referentTrainerId?: string;
   referentTrainerName?: string;
+  referentTrainer?: string;
   studentsCount: number;
   status: PromotionStatus;
+  isFrozen?: boolean;
+  totalHours?: number;
+  totalDays?: number;
+  rncpLevel?: string;
   neveaReference?: string;
 }
 

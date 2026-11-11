@@ -52,10 +52,29 @@ CREATE TYPE notification_type AS ENUM ('action_assigned', 'due_date_warning', 'a
 ### 3.2 Référentiel Pédagogique (Cursus, Promotions, Étudiants, Formateurs)
 4. **`cursus`** : Catalogue des cursus d'Aston (RNCP / Diplômes).
    - `id UUID PRIMARY KEY`
-   - `code TEXT UNIQUE NOT NULL` (ex: `TSR_2026`)
+   - `code TEXT UNIQUE NOT NULL` (ex: `TSN`, `TSRS`, `BTS-CIEL`, `PB-NCLC`, `ASRBD`, `ESD`, `DPI`)
    - `title TEXT NOT NULL` (ex: `Technicien Systèmes Réseaux & Sécurité`)
-   - `rncp_level TEXT` (ex: `Niveau 5 (Bac+2)`, `Niveau 6 (Bac+3/4)`, `Niveau 7 (Bac+5)`)
+   - `short_name TEXT` (ex: `TSRS`, `Product Builder`)
+   - `type TEXT DEFAULT 'Cursus Diplômant'`
+   - `modality TEXT DEFAULT 'Alternance'`
+   - `rncp_level TEXT NOT NULL` (ex: `Titre RNCP Niveau 5 (Bac+2)`, `Titre RNCP Niveau 6 (Bac+3/4)`, `Titre RNCP Niveau 7 - Mastère II`)
+   - `total_hours INTEGER NOT NULL` (ex: 402, 420, 490, 560, 910, 1351)
+   - `total_days INTEGER NOT NULL` (ex: 58, 60, 70, 80, 130, 219)
+   - `status TEXT DEFAULT 'active'` (`active`, `upcoming`, `frozen`, `archived`) — *Product Builder est gelé pour révision annuelle en statut `upcoming`*
+   - `description TEXT` (Objectifs et synthèse du programme)
+   - `tags TEXT[]` (ex: `['#Cybersécurité', '#Cloud', '#DevOps']`)
    - `is_active BOOLEAN DEFAULT TRUE`
+   - `created_at / updated_at TIMESTAMPTZ`
+
+4.bis. **`cursus_skill_blocks`** : Blocs de compétences RNCP officiels rattachés au cursus (normalisation 3NF).
+   - `id UUID PRIMARY KEY`
+   - `cursus_id UUID NOT NULL REFERENCES cursus(id) ON DELETE CASCADE`
+   - `block_number INTEGER NOT NULL` (ex: 1, 2, 3, 4, 5)
+   - `title TEXT NOT NULL` (ex: `BLOC 1 - Déploiement matériels & réseau`)
+   - `description TEXT` (Compétences opérationnelles validées)
+   - `created_at TIMESTAMPTZ`
+   - `UNIQUE(cursus_id, block_number)`
+   - `INDEX(cursus_id)`
 
 5. **`promotions`** : Promotions concrètes d'étudiants.
    - `id UUID PRIMARY KEY`

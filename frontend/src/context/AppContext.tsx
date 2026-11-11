@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   UserProfile, UserRole, Promotion, Student, Trainer, CalendarEvent, 
-  Interview, Meeting, ActionItem, DocumentItem, AppNotification, ActionStatus, ActionPriority, InterviewType
+  Interview, Meeting, ActionItem, DocumentItem, AppNotification, ActionStatus, ActionPriority, InterviewType,
+  Cursus
 } from '../types';
 import { 
   CURRENT_USER, INITIAL_PROMOTIONS, INITIAL_STUDENTS, INITIAL_TRAINERS,
   INITIAL_EVENTS, INITIAL_INTERVIEWS, INITIAL_MEETINGS, INITIAL_ACTIONS,
-  INITIAL_DOCUMENTS, INITIAL_NOTIFICATIONS
+  INITIAL_DOCUMENTS, INITIAL_NOTIFICATIONS, INITIAL_CURSUS
 } from '../data/mockData';
 import { api } from '../services/api';
 
@@ -19,6 +20,7 @@ interface AppContextType {
   isDemoMode: boolean;
   isBackendConnected: boolean;
   promotions: Promotion[];
+  cursusList: Cursus[];
   students: Student[];
   trainers: Trainer[];
   events: CalendarEvent[];
@@ -86,6 +88,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_PROMOTIONS;
   });
 
+  const [cursusList, setCursusList] = useState<Cursus[]>(INITIAL_CURSUS);
+
   const [students, setStudents] = useState<Student[]>(() => {
     const saved = localStorage.getItem('aston_students');
     return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
@@ -127,17 +131,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsBackendConnected(isAlive);
 
       if (isAlive) {
-        const [remotePromos, remoteStudents, remoteActions, remoteInterviews] = await Promise.all([
+        const [remotePromos, remoteStudents, remoteActions, remoteInterviews, remoteCursus] = await Promise.all([
           api.getPromotions(),
           api.getStudents(),
           api.getActions(),
           api.getInterviews(),
+          api.getCursus(),
         ]);
 
         if (remotePromos && remotePromos.length > 0) setPromotions(remotePromos);
         if (remoteStudents && remoteStudents.length > 0) setStudents(remoteStudents as any);
         if (remoteActions && remoteActions.length > 0) setActions(remoteActions as any);
         if (remoteInterviews && remoteInterviews.length > 0) setInterviews(remoteInterviews as any);
+        if (remoteCursus && remoteCursus.length > 0) setCursusList(remoteCursus);
       }
     };
 
@@ -416,6 +422,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isDemoMode,
       isBackendConnected,
       promotions: accessiblePromotions,
+      cursusList,
       students: accessibleStudents,
       trainers,
       events,

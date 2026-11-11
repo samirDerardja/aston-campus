@@ -68,24 +68,89 @@ server.get('/health', async () => {
   };
 });
 
+// --- MODULE CURSUS (RÉFÉRENTIEL FORMATIONS & BLOCS DE COMPÉTENCES) ---
+server.get('/api/cursus', async (request: FastifyRequest<{ Querystring: { status?: string } }>) => {
+  const { status } = request.query;
+
+  if (supabase) {
+    try {
+      let query = supabase.from('cursus').select('*, skill_blocks:cursus_skill_blocks(*)');
+      if (status) {
+        query = query.eq('status', status);
+      }
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        return data.map((c: any) => ({
+          id: c.id,
+          code: c.code,
+          title: c.title,
+          shortName: c.short_name || c.title,
+          type: c.type || 'Cursus Diplômant',
+          modality: c.modality || 'Alternance',
+          rncpLevel: c.rncp_level,
+          totalHours: c.total_hours || (c.code === 'BTS-CIEL' ? 1351 : (c.code === 'PBNCLC' ? 402 : (c.code === 'DPI' ? 490 : (c.code === 'ESD' ? 560 : 910)))),
+          totalDays: c.total_days || (c.code === 'BTS-CIEL' ? 219 : (c.code === 'PBNCLC' ? 58 : (c.code === 'DPI' ? 70 : (c.code === 'ESD' ? 80 : 130)))),
+          status: c.status || (c.code === 'PBNCLC' ? 'upcoming' : 'active'),
+          description: c.description,
+          tags: c.tags || [],
+          skillBlocks: (c.skill_blocks || []).map((b: any) => ({
+            id: b.id,
+            blockNumber: b.block_number,
+            title: b.title,
+            description: b.description
+          }))
+        }));
+      }
+    } catch {}
+  }
+
+  let list = inMemoryDb.cursus || [];
+  if (status) {
+    list = list.filter(c => c.status === status);
+  }
+  return list;
+});
+
+server.get('/api/cursus/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const list = inMemoryDb.cursus || [];
+  const found = list.find(c => c.id === id || c.code.toLowerCase() === id.toLowerCase());
+  if (!found) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Cursus introuvable' });
+  }
+  return found;
+});
+
 // --- MODULE PROMOTIONS ---
 server.get('/api/promotions', async () => {
   if (supabase) {
     const { data, error } = await supabase.from('promotions').select('*');
     if (!error && data && data.length > 0) {
-      return data.map((p: any) => ({
-        id: p.id,
-        code: p.code,
-        name: p.name,
-        cursus: p.code?.includes('DW') ? 'BTS Développeur Web' : (p.code?.includes('TSRS') ? 'Technicien Systèmes Réseaux & Sécurité' : (p.code?.includes('ESD') ? 'Expert En Sécurité Digitale' : 'Formation Aston')),
-        status: p.status,
-        studentsCount: p.studentsCount || 24,
-        startDate: p.start_date || '02 sept. 2025',
-        endDate: p.end_date || '06 juin 2026',
-        coordinator: 'Samir Derardja',
-        referentTrainer: 'Thomas Moreau',
-        neveaReference: p.nevea_reference,
-      }));
+      return data.map((p: any) => {
+        const isPB = p.code?.includes('PB') || p.cursus_id === '22222222-0000-0000-0000-000000000004';
+        const isTSRS = p.code?.includes('TSRS') || p.cursus_id === '22222222-0000-0000-0000-000000000002';
+        const isESD = p.code?.includes('ESD') || p.cursus_id === '22222222-0000-0000-0000-000000000006';
+        const isDPI = p.code?.includes('DPI') || p.cursus_id === '22222222-0000-0000-0000-000000000007';
+
+        return {
+          id: p.id,
+          code: p.code,
+          name: p.name,
+          cursusId: p.cursus_id,
+          cursus: isPB ? 'Product Builder No Code Low Code' : (isTSRS ? 'Technicien Systèmes Réseaux & Sécurité' : (isESD ? 'Expert En Sécurité Digitale' : (isDPI ? 'Directeur De Projets Informatique' : 'BTS Développeur Web'))),
+          status: isPB ? 'upcoming' : p.status, // Product Builder est gelé pour révision / Prochainement
+          isFrozen: isPB,
+          studentsCount: isPB ? 0 : (p.studentsCount || 24),
+          totalHours: isPB ? 402 : (isTSRS ? 910 : (isESD ? 560 : (isDPI ? 490 : 910))),
+          totalDays: isPB ? 58 : (isTSRS ? 130 : (isESD ? 80 : (isDPI ? 70 : 130))),
+          rncpLevel: isPB ? 'Niveau 6 (Bac+3/4)' : (isTSRS ? 'Niveau 5 (Bac+2)' : (isESD ? 'Niveau 7 - Mastère II' : 'Niveau 5 (Bac+2)')),
+          startDate: p.start_date || '02 sept. 2025',
+          endDate: p.end_date || '06 juin 2026',
+          coordinator: 'Samir Derardja',
+          referentTrainer: 'Thomas Moreau',
+          neveaReference: p.nevea_reference,
+        };
+      });
     }
   }
   return inMemoryDb.promotions;

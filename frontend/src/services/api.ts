@@ -1,4 +1,4 @@
-import { Promotion, Student, Trainer, ActionItem, Interview, ActionStatus } from '../types';
+import { Promotion, Student, Trainer, ActionItem, Interview, ActionStatus, Cursus } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -18,6 +18,28 @@ class ApiService {
     } catch {
       this.isOnline = false;
       return false;
+    }
+  }
+
+  // --- RÉFÉRENTIEL DES CURSUS & COMPÉTENCES ---
+  async getCursus(status?: string): Promise<Cursus[] | null> {
+    try {
+      const url = status ? `${API_BASE_URL}/cursus?status=${encodeURIComponent(status)}` : `${API_BASE_URL}/cursus`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async getCursusById(id: string): Promise<Cursus | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/cursus/${id}`, { signal: AbortSignal.timeout(2000) });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
     }
   }
 
