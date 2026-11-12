@@ -227,6 +227,240 @@ class ApiService {
       return null;
     }
   }
+
+  async updateInterview(id: string, data: any): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/interviews/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async deleteInterview(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/interviews/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // --- PROMOTIONS CRUD ---
+  async createPromotion(data: Partial<Promotion>): Promise<Promotion | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/promotions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async updatePromotion(id: string, data: Partial<Promotion>): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/promotions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async deletePromotion(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/promotions/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // --- APPRENANTS CRUD ---
+  async createStudent(data: Partial<Student>): Promise<Student | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/students`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async updateStudent(id: string, data: Partial<Student>): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/students/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async deleteStudent(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/students/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // --- ACTIONS CRUD COMPLET ---
+  async updateAction(id: string, data: Partial<ActionItem>): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/actions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async deleteAction(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/actions/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // --- RÉUNIONS / SYNCHRONISATIONS CRUD ---
+  async getMeetings(): Promise<any[] | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings`, { signal: AbortSignal.timeout(2000) });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async createMeeting(data: any): Promise<any | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async updateMeeting(id: string, data: any): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async deleteMeeting(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // --- DOCUMENTS CRUD ---
+  async getDocuments(): Promise<any[] | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/documents`, { signal: AbortSignal.timeout(2000) });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async createDocument(data: any): Promise<any | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteDocument(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/documents/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // --- PLANNING ÉVÉNEMENTS LOCAUX CRUD ---
+  async getEvents(): Promise<any[] | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/events`, { signal: AbortSignal.timeout(2000) });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async createEvent(data: any): Promise<any | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteEvent(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/events/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export const api = new ApiService();

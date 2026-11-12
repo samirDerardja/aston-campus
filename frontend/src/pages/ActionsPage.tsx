@@ -1,380 +1,245 @@
 import React, { useState } from 'react';
 import { 
-  CheckSquare, Search, Filter, Plus, Calendar, 
-  User, AlertTriangle, CheckCircle2, Clock, ChevronRight,
-  MoreHorizontal, ArrowRight, X, GripVertical, Sparkles, RotateCcw
+  Search, Plus, Calendar, CheckCircle2, ArrowRight, X, 
+  GripVertical, Sparkles, RotateCcw, Pencil, Trash2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-
-interface KanbanAction {
-  id: string;
-  title: string;
-  promotion: string;
-  responsible: string;
-  avatarText: string;
-  priority: 'Haute' | 'Moyenne' | 'Basse';
-  dueDate: string;
-  status: 'todo' | 'in_progress' | 'completed';
-  notes?: string;
-}
+import { ActionItem, ActionPriority, ActionStatus } from '../types';
 
 export const ActionsPage: React.FC = () => {
-  const { promotions, updateActionStatus } = useApp();
+  const { 
+    promotions, actions, addAction, updateAction, 
+    updateActionStatus, deleteAction 
+  } = useApp();
 
-  const [actions, setActions] = useState<KanbanAction[]>([
-    // Colonne 1 : À faire (7)
-    {
-      id: 'act-1',
-      title: 'Renforcement français & rédaction pro',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'J. Martin',
-      avatarText: 'JM',
-      priority: 'Haute',
-      dueDate: '15 nov. 2026',
-      status: 'todo',
-      notes: 'Difficultés de formulation dans les livrables d\'alternance',
-    },
-    {
-      id: 'act-2',
-      title: 'Manque de participation en cours',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Moyenne',
-      dueDate: '18 nov. 2026',
-      status: 'todo',
-      notes: 'Point individuel à caler avec l\'apprenant',
-    },
-    {
-      id: 'act-3',
-      title: 'Rattrapage QCM Bases de données',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'P. Lambert',
-      avatarText: 'PL',
-      priority: 'Haute',
-      dueDate: '12 nov. 2026',
-      status: 'todo',
-    },
-    {
-      id: 'act-4',
-      title: 'Point tuteur entreprise (Assiduité)',
-      promotion: 'CDA2026 • Concepteur Dév.',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Haute',
-      dueDate: '14 nov. 2026',
-      status: 'todo',
-    },
-    {
-      id: 'act-5',
-      title: 'Cadrage projet fin d\'année',
-      promotion: 'SIO2025 • BTS SIO',
-      responsible: 'M. Benali',
-      avatarText: 'MB',
-      priority: 'Moyenne',
-      dueDate: '22 nov. 2026',
-      status: 'todo',
-    },
-    {
-      id: 'act-6',
-      title: 'Contrat alternance à signer',
-      promotion: 'CYB2026 • Cybersécurité',
-      responsible: 'C. Vasseur',
-      avatarText: 'CV',
-      priority: 'Moyenne',
-      dueDate: '19 nov. 2026',
-      status: 'todo',
-    },
-    {
-      id: 'act-7',
-      title: 'Validation livret d\'apprentissage',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'J. Martin',
-      avatarText: 'JM',
-      priority: 'Basse',
-      dueDate: '25 nov. 2026',
-      status: 'todo',
-    },
-
-    // Colonne 2 : En cours (14)
-    {
-      id: 'act-8',
-      title: 'Soutien en maths & logique algorithmique',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'J. Martin',
-      avatarText: 'JM',
-      priority: 'Haute',
-      dueDate: '20 nov. 2026',
-      status: 'in_progress',
-      notes: '3 séances de tutorat programmées les mercredis',
-    },
-    {
-      id: 'act-9',
-      title: 'Suivi individuel (Thomas Dubois)',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Moyenne',
-      dueDate: '17 nov. 2026',
-      status: 'in_progress',
-      notes: 'Plan d\'accompagnement sur les requêtes SQL',
-    },
-    {
-      id: 'act-10',
-      title: 'Atelier Git & GitHub avancé',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'P. Lambert',
-      avatarText: 'PL',
-      priority: 'Moyenne',
-      dueDate: '21 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-11',
-      title: 'Point d\'étape semestriel tuteurs',
-      promotion: 'CDA2026 • Concepteur Dév.',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Haute',
-      dueDate: '24 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-12',
-      title: 'Accompagnement certification Agile',
-      promotion: 'DSO2026 • DevSecOps',
-      responsible: 'P. Lambert',
-      avatarText: 'PL',
-      priority: 'Basse',
-      dueDate: '28 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-13',
-      title: 'Préparation soutenance orale',
-      promotion: 'SIO2025 • BTS SIO',
-      responsible: 'M. Benali',
-      avatarText: 'MB',
-      priority: 'Moyenne',
-      dueDate: '30 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-14',
-      title: 'Suivi d\'intégration en entreprise',
-      promotion: 'CYB2026 • Cybersécurité',
-      responsible: 'C. Vasseur',
-      avatarText: 'CV',
-      priority: 'Haute',
-      dueDate: '16 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-15',
-      title: 'Révision des maquettes Figma',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'J. Martin',
-      avatarText: 'JM',
-      priority: 'Basse',
-      dueDate: '02 déc. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-16',
-      title: 'Installation environnement Docker',
-      promotion: 'DSO2026 • DevSecOps',
-      responsible: 'P. Lambert',
-      avatarText: 'PL',
-      priority: 'Moyenne',
-      dueDate: '25 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-17',
-      title: 'Tutorat pairs-à-pairs JavaScript',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Moyenne',
-      dueDate: '27 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-18',
-      title: 'Contrôle assiduité hebdomadaire',
-      promotion: 'CDA2026 • Concepteur Dév.',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Haute',
-      dueDate: '13 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-19',
-      title: 'Audit sécurité TP Réseaux',
-      promotion: 'CYB2026 • Cybersécurité',
-      responsible: 'C. Vasseur',
-      avatarText: 'CV',
-      priority: 'Haute',
-      dueDate: '23 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-20',
-      title: 'Bilan de mi-parcours Qualiopi',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Haute',
-      dueDate: '15 nov. 2026',
-      status: 'in_progress',
-    },
-    {
-      id: 'act-21',
-      title: 'Contrôle des émargements électroniques',
-      promotion: 'SIO2025 • BTS SIO',
-      responsible: 'M. Benali',
-      avatarText: 'MB',
-      priority: 'Moyenne',
-      dueDate: '19 nov. 2026',
-      status: 'in_progress',
-    },
-
-    // Colonne 3 : Clôturées (12)
-    {
-      id: 'act-22',
-      title: 'Remise à niveau environnement Linux',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'P. Lambert',
-      avatarText: 'PL',
-      priority: 'Moyenne',
-      dueDate: '28 oct. 2026',
-      status: 'completed',
-    },
-    {
-      id: 'act-23',
-      title: 'Accompagnement convention de stage',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Haute',
-      dueDate: '30 oct. 2026',
-      status: 'completed',
-    },
-    {
-      id: 'act-24',
-      title: 'Entretien initial d\'intégration',
-      promotion: 'CDA2026 • Concepteur Dév.',
-      responsible: 'J. Martin',
-      avatarText: 'JM',
-      priority: 'Moyenne',
-      dueDate: '25 oct. 2026',
-      status: 'completed',
-    },
-    {
-      id: 'act-25',
-      title: 'Validation des prérequis TypeScript',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'P. Lambert',
-      avatarText: 'PL',
-      priority: 'Haute',
-      dueDate: '02 nov. 2026',
-      status: 'completed',
-    },
-    {
-      id: 'act-26',
-      title: 'Point assiduité septembre',
-      promotion: 'SIO2025 • BTS SIO',
-      responsible: 'M. Benali',
-      avatarText: 'MB',
-      priority: 'Moyenne',
-      dueDate: '05 oct. 2026',
-      status: 'completed',
-    },
-    {
-      id: 'act-27',
-      title: 'Mise en place salle serveurs',
-      promotion: 'CYB2026 • Cybersécurité',
-      responsible: 'C. Vasseur',
-      avatarText: 'CV',
-      priority: 'Basse',
-      dueDate: '18 oct. 2026',
-      status: 'completed',
-    },
-    {
-      id: 'act-28',
-      title: 'Livret d\'accueil dématérialisé',
-      promotion: 'DW2025 • Développeur Web',
-      responsible: 'Samir Derardja',
-      avatarText: 'SD',
-      priority: 'Basse',
-      dueDate: '10 sept. 2026',
-      status: 'completed',
-    },
-  ]);
-
-  // Filtres dropdown : Toutes les promotions, Tous les responsables, Tous les statuts
   const [selectedPromo, setSelectedPromo] = useState('all');
   const [selectedResponsible, setSelectedResponsible] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [search, setSearch] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingActionId, setEditingActionId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
-  const [newPromo, setNewPromo] = useState('DW2025 • Développeur Web');
+  const [newDescription, setNewDescription] = useState('');
+  const [newPromoId, setNewPromoId] = useState(promotions[0]?.id || '33333333-0000-0000-0000-000000000001');
   const [newResponsible, setNewResponsible] = useState('Samir Derardja');
-  const [newPriority, setNewPriority] = useState<'Haute' | 'Moyenne' | 'Basse'>('Haute');
-  const [newDueDate, setNewDueDate] = useState('20 nov. 2026');
-
-  const filteredActions = actions.filter((a) => {
-    const matchesSearch = a.title.toLowerCase().includes(search.toLowerCase()) ||
-                          a.promotion.toLowerCase().includes(search.toLowerCase());
-    const matchesPromo = selectedPromo === 'all' || a.promotion.includes(selectedPromo);
-    const matchesResp = selectedResponsible === 'all' || a.responsible === selectedResponsible;
-    const matchesPriority = selectedPriority === 'all' || a.priority === selectedPriority;
-    return matchesSearch && matchesPromo && matchesResp && matchesPriority;
-  });
-
-  const todoActions = filteredActions.filter((a) => a.status === 'todo');
-  const inProgressActions = filteredActions.filter((a) => a.status === 'in_progress');
-  const completedActions = filteredActions.filter((a) => a.status === 'completed');
+  const [newPriority, setNewPriority] = useState<ActionPriority>('high');
+  const [newDueDate, setNewDueDate] = useState('2026-11-20');
 
   const [draggedActionId, setDraggedActionId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<'todo' | 'in_progress' | 'completed' | null>(null);
 
-  const moveAction = (id: string, newStatus: 'todo' | 'in_progress' | 'completed') => {
-    setActions((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
-    );
-    if (updateActionStatus) {
-      updateActionStatus(id, newStatus);
+  const priorityLabel = (p: ActionPriority) => {
+    if (p === 'urgent' || p === 'high') return 'Haute';
+    if (p === 'medium') return 'Moyenne';
+    return 'Basse';
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'SD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const filteredActions = actions.filter((a) => {
+    const promoLabel = a.promotionName || '';
+    const matchesSearch = a.title.toLowerCase().includes(search.toLowerCase()) ||
+                          promoLabel.toLowerCase().includes(search.toLowerCase()) ||
+                          (a.studentName || '').toLowerCase().includes(search.toLowerCase());
+    const matchesPromo = selectedPromo === 'all' || a.promotionId === selectedPromo || promoLabel.includes(selectedPromo);
+    const matchesResp = selectedResponsible === 'all' || a.assigneeName === selectedResponsible;
+    const matchesPriority = selectedPriority === 'all' || priorityLabel(a.priority) === selectedPriority;
+    return matchesSearch && matchesPromo && matchesResp && matchesPriority;
+  });
+
+  const todoActions = filteredActions.filter((a) => a.status === 'todo');
+  const inProgressActions = filteredActions.filter((a) => a.status === 'in_progress' || a.status === 'waiting');
+  const completedActions = filteredActions.filter((a) => a.status === 'completed');
+
+  const moveAction = (id: string, newStatus: ActionStatus) => {
+    updateActionStatus(id, newStatus);
+  };
+
+  const openCreateModal = () => {
+    setEditingActionId(null);
+    setNewTitle('');
+    setNewDescription('');
+    setNewPromoId(promotions[0]?.id || '');
+    setNewResponsible('Samir Derardja');
+    setNewPriority('high');
+    setNewDueDate('2026-11-20');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (act: ActionItem) => {
+    setEditingActionId(act.id);
+    setNewTitle(act.title);
+    setNewDescription(act.description || '');
+    setNewPromoId(act.promotionId || promotions[0]?.id || '');
+    setNewResponsible(act.assigneeName || 'Samir Derardja');
+    setNewPriority(act.priority);
+    setNewDueDate(act.dueDate || '2026-11-20');
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (window.confirm(`Supprimer l'action "${title}" ?`)) {
+      await deleteAction(id);
     }
   };
 
-  const handleCreateAction = (e: React.FormEvent) => {
+  const handleSaveAction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    const initials = newResponsible
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
+    const promo = promotions.find(p => p.id === newPromoId);
 
-    const created: KanbanAction = {
-      id: `act-${Date.now()}`,
-      title: newTitle.trim(),
-      promotion: newPromo,
-      responsible: newResponsible,
-      avatarText: initials,
-      priority: newPriority,
-      dueDate: newDueDate,
-      status: 'todo',
-    };
+    if (editingActionId) {
+      await updateAction(editingActionId, {
+        title: newTitle.trim(),
+        description: newDescription.trim(),
+        promotionId: newPromoId,
+        promotionName: promo ? promo.name : 'Promotion',
+        assigneeName: newResponsible,
+        priority: newPriority,
+        dueDate: newDueDate,
+      });
+    } else {
+      addAction({
+        title: newTitle.trim(),
+        description: newDescription.trim() || `Suivi pédagogique (${promo?.name || 'Campus'})`,
+        promotionId: newPromoId,
+        assigneeId: 'usr-samir-01',
+        priority: newPriority,
+        dueDate: newDueDate,
+      });
+    }
 
-    setActions([created, ...actions]);
-    setNewTitle('');
     setIsModalOpen(false);
+  };
+
+  const renderCard = (act: ActionItem, col: 'todo' | 'in_progress' | 'completed') => {
+    const prioText = priorityLabel(act.priority);
+    const isCompleted = col === 'completed';
+
+    return (
+      <div
+        key={act.id}
+        draggable={true}
+        onDragStart={(e) => {
+          setDraggedActionId(act.id);
+          e.dataTransfer.setData('text/plain', act.id);
+          e.dataTransfer.effectAllowed = 'move';
+        }}
+        onDragEnd={() => {
+          setDraggedActionId(null);
+          setDragOverColumn(null);
+        }}
+        className={`${isCompleted ? 'bg-white/70 backdrop-blur-md border-white/80 opacity-90 hover:opacity-100' : 'glass-card'} p-4 rounded-2xl border space-y-3 cursor-grab active:cursor-grabbing transition-all duration-150 select-none group/card ${
+          draggedActionId === act.id
+            ? 'opacity-30 scale-95 border-2 border-dashed border-slate-800 rotate-1 shadow-lg'
+            : 'hover:-translate-y-0.5 hover:shadow-md'
+        }`}
+      >
+        <div className="flex items-start justify-between">
+          {isCompleted ? (
+            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Terminée
+            </span>
+          ) : (
+            <span
+              className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md font-mono ${
+                prioText === 'Haute'
+                  ? 'bg-rose-50 text-[#F43F5E] border border-rose-200/80'
+                  : prioText === 'Moyenne'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {prioText}
+            </span>
+          )}
+
+          <div className="flex items-center space-x-1 text-slate-400">
+            <span className="text-[11px] font-mono flex items-center space-x-1 mr-1">
+              <Calendar className="w-3 h-3 text-slate-400" />
+              <span>{act.dueDate}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => openEditModal(act)}
+              title="Modifier l'action"
+              className="p-1 rounded-md hover:bg-indigo-50 hover:text-indigo-600 transition"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDelete(act.id, act.title)}
+              title="Supprimer l'action"
+              className="p-1 rounded-md hover:bg-rose-50 hover:text-rose-600 transition"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+            <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover/card:text-slate-700 transition cursor-grab" />
+          </div>
+        </div>
+
+        <div>
+          <h4 className={`text-xs font-bold leading-snug ${isCompleted ? 'text-slate-700 line-through decoration-slate-400' : 'text-slate-900'}`}>
+            {act.title}
+          </h4>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            {act.promotionName || 'Campus Aston'} {act.studentName ? `• ${act.studentName}` : ''}
+          </p>
+        </div>
+
+        {act.description && !isCompleted && (
+          <p className="text-[11px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-white/90 shadow-2xs line-clamp-2">
+            {act.description}
+          </p>
+        )}
+
+        <div className="flex items-center justify-between pt-2 border-t border-white/60">
+          <div className="flex items-center space-x-2">
+            <div className={`w-6 h-6 rounded-lg text-[10px] font-bold flex items-center justify-center font-mono shadow-2xs ${
+              isCompleted ? 'bg-slate-200 text-slate-700' : 'bg-[#0F172A] text-white'
+            }`}>
+              {getInitials(act.assigneeName)}
+            </div>
+            <span className="text-[11px] font-medium text-slate-600">{act.assigneeName || 'Samir Derardja'}</span>
+          </div>
+
+          {col === 'todo' && (
+            <button
+              onClick={() => moveAction(act.id, 'in_progress')}
+              className="text-[11px] font-bold text-[#00A86B] hover:text-[#00D084] flex items-center space-x-0.5 transition"
+            >
+              <span>Lancer</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
+          {col === 'in_progress' && (
+            <button
+              onClick={() => moveAction(act.id, 'completed')}
+              className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-0.5 transition"
+            >
+              <span>Clôturer</span>
+              <CheckCircle2 className="w-3 h-3" />
+            </button>
+          )}
+          {col === 'completed' && (
+            <button
+              onClick={() => moveAction(act.id, 'in_progress')}
+              title="Rouvrir et repasser En cours"
+              className="text-[11px] font-semibold text-slate-500 hover:text-indigo-600 flex items-center space-x-1 transition"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Rouvrir</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -397,7 +262,7 @@ export const ActionsPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={openCreateModal}
           className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-2xl bg-[#0F172A] hover:bg-[#1E293B] text-white font-extrabold text-xs shadow-[0_4px_16px_rgba(15,23,42,0.2)] transition-all hover:scale-102 self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5 text-[#00D084]" />
@@ -407,12 +272,11 @@ export const ActionsPage: React.FC = () => {
 
       {/* Barre de filtres en verre translucide */}
       <div className="glass-panel p-3.5 rounded-3xl flex flex-wrap items-center justify-between gap-3 text-xs">
-        {/* Recherche */}
         <div className="relative flex-1 min-w-[260px]">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Rechercher une action pédagogique..."
+            placeholder="Rechercher une action, un apprenant, une promo..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-white/70 hover:bg-white focus:bg-white text-xs pl-9 pr-3.5 py-2.5 rounded-2xl border border-white/90 outline-none focus:border-slate-800 transition shadow-2xs placeholder:text-slate-400"
@@ -420,21 +284,17 @@ export const ActionsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center flex-wrap gap-2">
-          {/* Dropdown 1 : Promotions */}
           <select
             value={selectedPromo}
             onChange={(e) => setSelectedPromo(e.target.value)}
             className="bg-white/80 border border-white/90 rounded-2xl px-3.5 py-2 font-semibold text-slate-700 text-xs outline-none cursor-pointer hover:bg-white shadow-2xs"
           >
             <option value="all">Toutes les promotions</option>
-            <option value="DW2025">DW2025 • Développeur Web</option>
-            <option value="CDA2026">CDA2026 • Concepteur Dév.</option>
-            <option value="SIO2025">SIO2025 • BTS SIO</option>
-            <option value="CYB2026">CYB2026 • Cybersécurité</option>
-            <option value="DSO2026">DSO2026 • DevSecOps</option>
+            {promotions.map(p => (
+              <option key={p.id} value={p.id}>{p.code} • {p.name}</option>
+            ))}
           </select>
 
-          {/* Dropdown 2 : Responsables */}
           <select
             value={selectedResponsible}
             onChange={(e) => setSelectedResponsible(e.target.value)}
@@ -442,13 +302,13 @@ export const ActionsPage: React.FC = () => {
           >
             <option value="all">Tous les responsables</option>
             <option value="Samir Derardja">Samir Derardja</option>
-            <option value="J. Martin">J. Martin</option>
-            <option value="P. Lambert">P. Lambert</option>
-            <option value="M. Benali">M. Benali</option>
-            <option value="C. Vasseur">C. Vasseur</option>
+            <option value="Claire Dubois">Claire Dubois</option>
+            <option value="Sarah Martin">Sarah Martin</option>
+            <option value="Mourad">Mourad</option>
+            <option value="Christelle">Christelle</option>
+            <option value="Mehdi">Mehdi</option>
           </select>
 
-          {/* Dropdown 3 : Priorités */}
           <select
             value={selectedPriority}
             onChange={(e) => setSelectedPriority(e.target.value)}
@@ -462,7 +322,7 @@ export const ActionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3 Colonnes Kanban strictes en verre translucide avec Glisser-Déposer (Drag and Drop) */}
+      {/* 3 Colonnes Kanban avec Drag & Drop */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
         {/* COLONNE 1 : À faire */}
         <div 
@@ -483,108 +343,36 @@ export const ActionsPage: React.FC = () => {
             setDraggedActionId(null);
             setDragOverColumn(null);
           }}
-          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] flex flex-col justify-between ${
+          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] ${
             dragOverColumn === 'todo'
               ? 'bg-slate-100/95 border-slate-700 ring-2 ring-slate-800/30 shadow-xl scale-[1.01]'
               : 'bg-white/45 backdrop-blur-xl border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
           }`}
         >
+          <div className="flex items-center justify-between px-1 mb-1">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-900"></span>
+              <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
+                À faire ({todoActions.length})
+              </h3>
+            </div>
+            <span className="text-[10px] font-bold text-slate-700 bg-white/80 border border-slate-200/60 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
+              À planifier
+            </span>
+          </div>
+
+          {draggedActionId && (
+            <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
+              dragOverColumn === 'todo'
+                ? 'border-slate-800 bg-white text-slate-900 shadow-xs'
+                : 'border-slate-300 text-slate-400 bg-white/40'
+            }`}>
+              {dragOverColumn === 'todo' ? '✓ Déposer ici pour placer dans "À faire"' : 'Glisser ici (À faire)'}
+            </div>
+          )}
+
           <div className="space-y-3">
-            <div className="flex items-center justify-between px-1 mb-1">
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-900"></span>
-                <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
-                  À faire ({todoActions.length})
-                </h3>
-              </div>
-              <span className="text-[10px] font-bold text-slate-700 bg-white/80 border border-slate-200/60 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
-                À planifier
-              </span>
-            </div>
-
-            {/* Zone de drop cible visible lors du glissement */}
-            {draggedActionId && (
-              <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
-                dragOverColumn === 'todo'
-                  ? 'border-slate-800 bg-white text-slate-900 shadow-xs'
-                  : 'border-slate-300 text-slate-400 bg-white/40'
-              }`}>
-                {dragOverColumn === 'todo' ? '✓ Déposer ici pour placer dans "À faire"' : 'Glisser ici (À faire)'}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {todoActions.map((act) => (
-                <div
-                  key={act.id}
-                  draggable={true}
-                  onDragStart={(e) => {
-                    setDraggedActionId(act.id);
-                    e.dataTransfer.setData('text/plain', act.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                  }}
-                  onDragEnd={() => {
-                    setDraggedActionId(null);
-                    setDragOverColumn(null);
-                  }}
-                  className={`glass-card p-4 rounded-2xl space-y-3 cursor-grab active:cursor-grabbing transition-all duration-150 select-none group/card ${
-                    draggedActionId === act.id
-                      ? 'opacity-30 scale-95 border-2 border-dashed border-slate-800 rotate-1 shadow-lg'
-                      : 'hover:-translate-y-0.5 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <span
-                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md font-mono ${
-                        act.priority === 'Haute'
-                          ? 'bg-rose-50 text-[#F43F5E] border border-rose-200/80'
-                          : act.priority === 'Moyenne'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {act.priority}
-                    </span>
-                    
-                    <div className="flex items-center space-x-1.5 text-slate-400">
-                      <span className="text-[11px] font-mono flex items-center space-x-1">
-                        <Calendar className="w-3 h-3 text-slate-400" />
-                        <span>{act.dueDate}</span>
-                      </span>
-                      <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover/card:text-slate-700 transition cursor-grab" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 leading-snug">{act.title}</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{act.promotion}</p>
-                  </div>
-
-                  {act.notes && (
-                    <p className="text-[11px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-white/90 shadow-2xs">
-                      {act.notes}
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2 border-t border-white/60">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 rounded-lg bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center font-mono shadow-2xs">
-                        {act.avatarText}
-                      </div>
-                      <span className="text-[11px] font-medium text-slate-600">{act.responsible}</span>
-                    </div>
-
-                    <button
-                      onClick={() => moveAction(act.id, 'in_progress')}
-                      className="text-[11px] font-bold text-[#00A86B] hover:text-[#00D084] flex items-center space-x-0.5 transition"
-                    >
-                      <span>Lancer</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {todoActions.map((act) => renderCard(act, 'todo'))}
           </div>
         </div>
 
@@ -607,108 +395,36 @@ export const ActionsPage: React.FC = () => {
             setDraggedActionId(null);
             setDragOverColumn(null);
           }}
-          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] flex flex-col justify-between ${
+          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] ${
             dragOverColumn === 'in_progress'
               ? 'bg-emerald-50/85 border-[#00D084] ring-2 ring-[#00D084]/40 shadow-xl scale-[1.01]'
               : 'bg-white/45 backdrop-blur-xl border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
           }`}
         >
+          <div className="flex items-center justify-between px-1 mb-1">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00D084] shadow-sm shadow-[#00D084]/50 animate-pulse"></span>
+              <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
+                En cours ({inProgressActions.length})
+              </h3>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-800 bg-[#00D084]/15 border border-[#00D084]/25 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
+              Suivi actif
+            </span>
+          </div>
+
+          {draggedActionId && (
+            <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
+              dragOverColumn === 'in_progress'
+                ? 'border-[#00D084] bg-emerald-100 text-emerald-900 shadow-xs'
+                : 'border-emerald-300/60 text-emerald-700/70 bg-emerald-50/30'
+            }`}>
+              {dragOverColumn === 'in_progress' ? '✓ Déposer ici pour passer "En cours"' : 'Glisser ici (En cours)'}
+            </div>
+          )}
+
           <div className="space-y-3">
-            <div className="flex items-center justify-between px-1 mb-1">
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#00D084] shadow-sm shadow-[#00D084]/50 animate-pulse"></span>
-                <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
-                  En cours ({inProgressActions.length})
-                </h3>
-              </div>
-              <span className="text-[10px] font-bold text-emerald-800 bg-[#00D084]/15 border border-[#00D084]/25 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
-                Suivi actif
-              </span>
-            </div>
-
-            {/* Zone de drop cible visible lors du glissement */}
-            {draggedActionId && (
-              <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
-                dragOverColumn === 'in_progress'
-                  ? 'border-[#00D084] bg-emerald-100 text-emerald-900 shadow-xs'
-                  : 'border-emerald-300/60 text-emerald-700/70 bg-emerald-50/30'
-              }`}>
-                {dragOverColumn === 'in_progress' ? '✓ Déposer ici pour passer "En cours"' : 'Glisser ici (En cours)'}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {inProgressActions.map((act) => (
-                <div
-                  key={act.id}
-                  draggable={true}
-                  onDragStart={(e) => {
-                    setDraggedActionId(act.id);
-                    e.dataTransfer.setData('text/plain', act.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                  }}
-                  onDragEnd={() => {
-                    setDraggedActionId(null);
-                    setDragOverColumn(null);
-                  }}
-                  className={`glass-card p-4 rounded-2xl space-y-3 cursor-grab active:cursor-grabbing transition-all duration-150 select-none group/card ${
-                    draggedActionId === act.id
-                      ? 'opacity-30 scale-95 border-2 border-dashed border-[#00D084] rotate-1 shadow-lg'
-                      : 'hover:-translate-y-0.5 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <span
-                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md font-mono ${
-                        act.priority === 'Haute'
-                          ? 'bg-rose-50 text-[#F43F5E] border border-rose-200/80'
-                          : act.priority === 'Moyenne'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {act.priority}
-                    </span>
-
-                    <div className="flex items-center space-x-1.5 text-slate-400">
-                      <span className="text-[11px] font-mono flex items-center space-x-1">
-                        <Calendar className="w-3 h-3 text-slate-400" />
-                        <span>{act.dueDate}</span>
-                      </span>
-                      <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover/card:text-slate-700 transition cursor-grab" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 leading-snug">{act.title}</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{act.promotion}</p>
-                  </div>
-
-                  {act.notes && (
-                    <p className="text-[11px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-white/90 shadow-2xs">
-                      {act.notes}
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2 border-t border-white/60">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 rounded-lg bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center font-mono shadow-2xs">
-                        {act.avatarText}
-                      </div>
-                      <span className="text-[11px] font-medium text-slate-600">{act.responsible}</span>
-                    </div>
-
-                    <button
-                      onClick={() => moveAction(act.id, 'completed')}
-                      className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-0.5 transition"
-                    >
-                      <span>Clôturer</span>
-                      <CheckCircle2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {inProgressActions.map((act) => renderCard(act, 'in_progress'))}
           </div>
         </div>
 
@@ -731,114 +447,54 @@ export const ActionsPage: React.FC = () => {
             setDraggedActionId(null);
             setDragOverColumn(null);
           }}
-          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] flex flex-col justify-between ${
+          className={`p-4 rounded-3xl border transition-all duration-200 space-y-3 min-h-[580px] ${
             dragOverColumn === 'completed'
               ? 'bg-indigo-50/85 border-indigo-500 ring-2 ring-indigo-500/40 shadow-xl scale-[1.01]'
               : 'bg-white/45 backdrop-blur-xl border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
           }`}
         >
+          <div className="flex items-center justify-between px-1 mb-1">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
+                Clôturées ({completedActions.length})
+              </h3>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
+              Validées
+            </span>
+          </div>
+
+          {draggedActionId && (
+            <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
+              dragOverColumn === 'completed'
+                ? 'border-indigo-600 bg-indigo-100 text-indigo-900 shadow-xs'
+                : 'border-indigo-300/60 text-indigo-700/70 bg-indigo-50/30'
+            }`}>
+              {dragOverColumn === 'completed' ? '✓ Déposer ici pour Clôturer l\'action' : 'Glisser ici (Clôturées)'}
+            </div>
+          )}
+
           <div className="space-y-3">
-            <div className="flex items-center justify-between px-1 mb-1">
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <h3 className="font-extrabold text-slate-900 text-xs tracking-wide">
-                  Clôturées ({completedActions.length})
-                </h3>
-              </div>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-mono shadow-2xs">
-                Validées
-              </span>
-            </div>
-
-            {/* Zone de drop cible visible lors du glissement */}
-            {draggedActionId && (
-              <div className={`p-3 rounded-2xl border-2 border-dashed text-center text-xs font-bold transition-all ${
-                dragOverColumn === 'completed'
-                  ? 'border-indigo-600 bg-indigo-100 text-indigo-900 shadow-xs'
-                  : 'border-indigo-300/60 text-indigo-700/70 bg-indigo-50/30'
-              }`}>
-                {dragOverColumn === 'completed' ? '✓ Déposer ici pour Clôturer l\'action' : 'Glisser ici (Clôturées)'}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {completedActions.map((act) => (
-                <div
-                  key={act.id}
-                  draggable={true}
-                  onDragStart={(e) => {
-                    setDraggedActionId(act.id);
-                    e.dataTransfer.setData('text/plain', act.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                  }}
-                  onDragEnd={() => {
-                    setDraggedActionId(null);
-                    setDragOverColumn(null);
-                  }}
-                  className={`bg-white/70 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-2xs space-y-3 opacity-90 hover:opacity-100 cursor-grab active:cursor-grabbing transition-all duration-150 select-none group/card ${
-                    draggedActionId === act.id
-                      ? 'opacity-30 scale-95 border-2 border-dashed border-indigo-500 rotate-1 shadow-lg'
-                      : 'hover:-translate-y-0.5 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Terminée
-                    </span>
-                    <div className="flex items-center space-x-1.5 text-slate-400">
-                      <span className="text-[11px] font-mono">{act.dueDate}</span>
-                      <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover/card:text-slate-600 transition cursor-grab" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-700 line-through decoration-slate-400">
-                      {act.title}
-                    </h4>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{act.promotion}</p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-white/60">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center font-mono">
-                        {act.avatarText}
-                      </div>
-                      <span className="text-[11px] font-medium text-slate-500">{act.responsible}</span>
-                    </div>
-
-                    <button
-                      onClick={() => moveAction(act.id, 'in_progress')}
-                      title="Rouvrir et repasser En cours"
-                      className="text-[11px] font-semibold text-slate-500 hover:text-indigo-600 flex items-center space-x-1 transition"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      <span>Rouvrir</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {completedActions.map((act) => renderCard(act, 'completed'))}
           </div>
         </div>
       </div>
 
-      {/* Modal : Nouvelle action corrective en verre translucide */}
+      {/* Modal : Création / Édition Action Corrective */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white/90 backdrop-blur-2xl rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white/95 backdrop-blur-2xl rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-extrabold text-slate-900">
-                Nouvelle Action Corrective
+                {editingActionId ? 'Modifier l\'Action Corrective' : 'Nouvelle Action Corrective'}
               </h3>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateAction} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveAction} className="space-y-3.5 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
                   Intitulé de l'action *
@@ -846,27 +502,38 @@ export const ActionsPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Ex : Soutien en programmation orientée objet"
+                  placeholder="Ex: Point assiduité tuteur Helpline"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 outline-none focus:border-slate-800 transition"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 outline-none focus:border-slate-800"
                 />
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Promotion concernée
+                  Description / Notes de suivi
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Précisez le plan d'action..."
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 outline-none focus:border-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Promotion
                 </label>
                 <select
-                  value={newPromo}
-                  onChange={(e) => setNewPromo(e.target.value)}
+                  value={newPromoId}
+                  onChange={(e) => setNewPromoId(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 outline-none"
                 >
-                  <option value="DW2025 • Développeur Web">DW2025 • Développeur Web</option>
-                  <option value="CDA2026 • Concepteur Dév.">CDA2026 • Concepteur Dév.</option>
-                  <option value="SIO2025 • BTS SIO">SIO2025 • BTS SIO</option>
-                  <option value="CYB2026 • Cybersécurité">CYB2026 • Cybersécurité</option>
-                  <option value="DSO2026 • DevSecOps">DSO2026 • DevSecOps</option>
+                  {promotions.map(p => (
+                    <option key={p.id} value={p.id}>{p.code} • {p.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -881,10 +548,11 @@ export const ActionsPage: React.FC = () => {
                     className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 outline-none"
                   >
                     <option value="Samir Derardja">Samir Derardja</option>
-                    <option value="J. Martin">J. Martin</option>
-                    <option value="P. Lambert">P. Lambert</option>
-                    <option value="M. Benali">M. Benali</option>
-                    <option value="C. Vasseur">C. Vasseur</option>
+                    <option value="Claire Dubois">Claire Dubois</option>
+                    <option value="Sarah Martin">Sarah Martin</option>
+                    <option value="Mourad">Mourad</option>
+                    <option value="Christelle">Christelle</option>
+                    <option value="Mehdi">Mehdi</option>
                   </select>
                 </div>
 
@@ -894,12 +562,13 @@ export const ActionsPage: React.FC = () => {
                   </label>
                   <select
                     value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value as any)}
+                    onChange={(e) => setNewPriority(e.target.value as ActionPriority)}
                     className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 outline-none"
                   >
-                    <option value="Haute">Haute</option>
-                    <option value="Moyenne">Moyenne</option>
-                    <option value="Basse">Basse</option>
+                    <option value="urgent">Urgente</option>
+                    <option value="high">Haute</option>
+                    <option value="medium">Moyenne</option>
+                    <option value="low">Basse</option>
                   </select>
                 </div>
               </div>
@@ -909,7 +578,7 @@ export const ActionsPage: React.FC = () => {
                   Échéance
                 </label>
                 <input
-                  type="text"
+                  type="date"
                   value={newDueDate}
                   onChange={(e) => setNewDueDate(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 outline-none font-mono"
@@ -928,7 +597,7 @@ export const ActionsPage: React.FC = () => {
                   type="submit"
                   className="px-5 py-2.5 rounded-2xl bg-[#0F172A] text-white font-extrabold hover:bg-[#1E293B] transition"
                 >
-                  Créer l'action
+                  {editingActionId ? 'Enregistrer' : 'Créer l\'action'}
                 </button>
               </div>
             </form>

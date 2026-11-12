@@ -1,21 +1,70 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { FolderArchive, Upload, Search, FileText, Download, ShieldCheck, Lock } from 'lucide-react';
+import { Upload, Search, FileText, Download, Lock, Trash2, X } from 'lucide-react';
 
 export const DocumentsPage: React.FC = () => {
-  const { documents, promotions } = useApp();
+  const { documents, promotions, addDocument, deleteDocument } = useApp();
   const [search, setSearch] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
 
-  const filteredDocs = documents.filter(d => 
+  const [formData, setFormData] = useState({
+    title: '',
+    fileName: '',
+    fileSizeBytes: 512000,
+    mimeType: 'application/pdf',
+    promotionId: '',
+  });
+
+  const filteredDocs = documents.filter(d =>
     d.title.toLowerCase().includes(search.toLowerCase()) ||
-    d.fileName.toLowerCase().includes(search.toLowerCase())
+    d.fileName.toLowerCase().includes(search.toLowerCase()) ||
+    (d.promotionName || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const handleDownload = (fileName: string) => {
     setDownloadNotice(`Génération de l'URL signée Supabase Storage pour : ${fileName}`);
     setTimeout(() => setDownloadNotice(null), 3500);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFormData(prev => ({
+      ...prev,
+      title: prev.title || file.name.replace(/\.[^/.]+$/, ''),
+      fileName: file.name,
+      fileSizeBytes: file.size,
+      mimeType: file.type || 'application/pdf',
+    }));
+  };
+
+  const handleUploadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim()) return;
+    addDocument({
+      title: formData.title.trim(),
+      fileName: formData.fileName.trim() || `${formData.title.trim().toLowerCase().replace(/\s+/g, '_')}.pdf`,
+      fileSizeBytes: formData.fileSizeBytes,
+      mimeType: formData.mimeType,
+      promotionId: formData.promotionId || promotions[0]?.id,
+    });
+    setShowUploadModal(false);
+    setFormData({
+      title: '',
+      fileName: '',
+      fileSizeBytes: 512000,
+      mimeType: 'application/pdf',
+      promotionId: '',
+    });
+    setDownloadNotice('Document ajouté avec succès.');
+    setTimeout(() => setDownloadNotice(null), 3500);
+  };
+
+  const handleDelete = (id: string, title: string) => {
+    if (window.confirm(`Supprimer le document "${title}" ?`)) {
+      deleteDocument(id);
+    }
   };
 
   return (
@@ -36,8 +85,17 @@ export const DocumentsPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setShowUploadModal(true)}
-          className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm shadow-blue-700/20 transition"
+          onClick={() => {
+            setFormData({
+              title: '',
+              fileName: '',
+              fileSizeBytes: 512000,
+              mimeType: 'application/pdf',
+              promotionId: promotions[0]?.id || '',
+            });
+            setShowUploadModal(true);
+          }}
+          className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm shadow-blue-700/20 transition self-start sm:self-auto"
         >
           <Upload className="w-4 h-4" />
           <span>Téléverser un document</span>
@@ -59,6 +117,18 @@ export const DocumentsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Barre de recherche */}
+      <div className="relative w-full sm:w-80">
+        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          placeholder="Rechercher un document, fichier, promotion..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800 shadow-2xs"
+        />
+      </div>
+
       {/* Table des documents */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         <table className="w-full text-left text-xs">
@@ -69,40 +139,57 @@ export const DocumentsPage: React.FC = () => {
               <th className="py-3 px-4">Promotion / Apprenant</th>
               <th className="py-3 px-4">Téléversé par</th>
               <th className="py-3 px-4">Date</th>
-              <th className="py-3 px-4 text-right">Action</th>
+              <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filteredDocs.map((doc) => (
-              <tr key={doc.id} className="hover:bg-slate-50 transition">
-                <td className="py-3 px-4">
-                  <div className="font-semibold text-slate-900 flex items-center space-x-2">
-                    <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
-                    <span>{doc.title}</span>
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="font-mono text-slate-600 block">{doc.fileName}</span>
-                  <span className="text-[10px] text-slate-400">{(doc.fileSizeBytes / 1024 / 1024).toFixed(2)} Mo</span>
-                </td>
-                <td className="py-3 px-4 text-slate-700">
-                  {doc.promotionName} {doc.studentName && `(${doc.studentName})`}
-                </td>
-                <td className="py-3 px-4 text-slate-600 font-medium">{doc.uploadedByName}</td>
-                <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
-                  {new Date(doc.uploadedAt).toLocaleDateString('fr-FR')}
-                </td>
-                <td className="py-3 px-4 text-right">
-                  <button
-                    onClick={() => handleDownload(doc.fileName)}
-                    className="inline-flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-800 font-semibold"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Télécharger</span>
-                  </button>
+            {filteredDocs.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-slate-400">
+                  Aucun document trouvé.
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredDocs.map((doc) => (
+                <tr key={doc.id} className="hover:bg-slate-50 transition">
+                  <td className="py-3 px-4">
+                    <div className="font-semibold text-slate-900 flex items-center space-x-2">
+                      <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+                      <span>{doc.title}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="font-mono text-slate-600 block">{doc.fileName}</span>
+                    <span className="text-[10px] text-slate-400">{(doc.fileSizeBytes / 1024 / 1024).toFixed(2)} Mo</span>
+                  </td>
+                  <td className="py-3 px-4 text-slate-700">
+                    {doc.promotionName} {doc.studentName && `(${doc.studentName})`}
+                  </td>
+                  <td className="py-3 px-4 text-slate-600 font-medium">{doc.uploadedByName}</td>
+                  <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                    {new Date(doc.uploadedAt).toLocaleDateString('fr-FR')}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <div className="inline-flex items-center space-x-3">
+                      <button
+                        onClick={() => handleDownload(doc.fileName)}
+                        className="inline-flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Télécharger</span>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(doc.id, doc.title)}
+                        title="Supprimer"
+                        className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -110,21 +197,74 @@ export const DocumentsPage: React.FC = () => {
       {showUploadModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
-            <h3 className="text-base font-bold text-slate-900 font-display">Téléverser un document pédagogique</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 font-display">Téléverser un document pédagogique</h3>
+              <button onClick={() => setShowUploadModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
             <p className="text-xs text-slate-500">Validation stricte MIME PDF / DOCX, taille max 25 Mo, stockage Supabase privé.</p>
-            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-xs text-slate-500">
-              <Upload className="w-8 h-8 mx-auto text-blue-500 mb-2" />
-              <p className="font-semibold text-slate-700">Glissez-déposez un fichier ici</p>
-              <p className="text-[11px] text-slate-400 mt-1">ou parcourez depuis votre poste</p>
-            </div>
-            <div className="flex justify-end space-x-2 pt-2">
-              <button onClick={() => setShowUploadModal(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600">Annuler</button>
-              <button onClick={() => { setShowUploadModal(false); setDownloadNotice('Fichier téléversé avec succès dans le bucket sécurisé.'); }} className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold">Téléverser</button>
-            </div>
+            <form onSubmit={handleUploadSubmit} className="space-y-3 text-xs">
+              <label className="block border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl p-5 text-center text-xs text-slate-500 cursor-pointer transition">
+                <Upload className="w-7 h-7 mx-auto text-blue-500 mb-1.5" />
+                <p className="font-semibold text-slate-700">
+                  {formData.fileName || 'Cliquez pour sélectionner un fichier'}
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">PDF, DOCX, XLSX (max 25 Mo)</p>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Titre du document *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Ex: Convention de stage signée"
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Promotion associée</label>
+                <select
+                  value={formData.promotionId}
+                  onChange={(e) => setFormData({ ...formData, promotionId: e.target.value })}
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
+                >
+                  {promotions.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUploadModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold"
+                >
+                  Téléverser
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
     </div>
   );
 };
+
 

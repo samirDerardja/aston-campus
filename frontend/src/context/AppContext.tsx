@@ -70,6 +70,32 @@ interface AppContextType {
 
   convertDecisionToAction: (meetingId: string, decisionId: string, title: string, assigneeId: string, dueDate: string, priority: ActionPriority) => void;
   
+  // CRUD Complet Promotions, Apprenants, Actions, Entretiens, Réunions, Documents, Planning
+  addPromotion: (data: Partial<Promotion>) => Promise<void>;
+  updatePromotion: (id: string, data: Partial<Promotion>) => Promise<void>;
+  deletePromotion: (id: string) => Promise<void>;
+
+  addStudent: (data: Partial<Student>) => Promise<void>;
+  updateStudent: (id: string, data: Partial<Student>) => Promise<void>;
+  deleteStudent: (id: string) => Promise<void>;
+
+  updateAction: (id: string, data: Partial<ActionItem>) => Promise<void>;
+  deleteAction: (id: string) => Promise<void>;
+
+  updateInterview: (id: string, data: Partial<Interview>) => Promise<void>;
+  deleteInterview: (id: string) => Promise<void>;
+
+  addMeeting: (data: { title: string; promotionId: string; scheduledAt: string; agenda: string }) => Promise<void>;
+  updateMeeting: (id: string, data: Partial<Meeting>) => Promise<void>;
+  deleteMeeting: (id: string) => Promise<void>;
+  addMeetingDecision: (meetingId: string, topic: string, decision: string) => Promise<void>;
+
+  addDocument: (data: { title: string; fileName: string; fileSizeBytes?: number; mimeType?: string; promotionId?: string }) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
+
+  addEvent: (data: { title: string; description?: string; startTime: string; endTime: string; promotionId?: string; room?: string }) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
+
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
 
@@ -125,7 +151,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_ACTIONS;
   });
 
-  const [documents] = useState<DocumentItem[]>(INITIAL_DOCUMENTS);
+  const [documents, setDocuments] = useState<DocumentItem[]>(() => {
+    const saved = localStorage.getItem('aston_documents');
+    return saved ? JSON.parse(saved) : INITIAL_DOCUMENTS;
+  });
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
     const saved = localStorage.getItem('aston_notifications');
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
@@ -150,7 +179,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsBackendConnected(isAlive);
 
       if (isAlive) {
-        const [remotePromos, remoteStudents, remoteActions, remoteInterviews, remoteCursus, remoteAlerts, remotePartners] = await Promise.all([
+        const [
+          remotePromos, remoteStudents, remoteActions, remoteInterviews,
+          remoteCursus, remoteAlerts, remotePartners, remoteMeetings, remoteDocs, remoteEvents
+        ] = await Promise.all([
           api.getPromotions(),
           api.getStudents(),
           api.getActions(),
@@ -158,6 +190,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           api.getCursus(),
           api.getAlerts(),
           api.getPartners(),
+          api.getMeetings(),
+          api.getDocuments(),
+          api.getEvents(),
         ]);
 
         if (remotePromos && remotePromos.length > 0) setPromotions(remotePromos);
@@ -167,6 +202,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (remoteCursus && remoteCursus.length > 0) setCursusList(remoteCursus);
         if (remoteAlerts && remoteAlerts.length > 0) setAlerts(remoteAlerts);
         if (remotePartners && remotePartners.length > 0) setPartners(remotePartners);
+        if (remoteMeetings && remoteMeetings.length > 0) setMeetings(remoteMeetings);
+        if (remoteDocs && remoteDocs.length > 0) setDocuments(remoteDocs);
+        if (remoteEvents && remoteEvents.length > 0) setEvents(prev => {
+          const existingIds = new Set(prev.map(e => e.id));
+          const merged = [...remoteEvents.filter((e: any) => !existingIds.has(e.id)), ...prev];
+          return merged;
+        });
       }
     };
 
@@ -212,6 +254,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     : actions;
 
   // Persistence locale du state de démo
+  useEffect(() => {
+    localStorage.setItem('aston_promotions', JSON.stringify(promotions));
+  }, [promotions]);
+
+  useEffect(() => {
+    localStorage.setItem('aston_students', JSON.stringify(students));
+  }, [students]);
+
+  useEffect(() => {
+    localStorage.setItem('aston_documents', JSON.stringify(documents));
+  }, [documents]);
+
+  useEffect(() => {
+    localStorage.setItem('aston_events', JSON.stringify(events));
+  }, [events]);
+
   useEffect(() => {
     localStorage.setItem('aston_actions', JSON.stringify(actions));
   }, [actions]);
@@ -515,6 +573,187 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return result;
   };
 
+  // --- CRUD COMPLET PROMOTIONS ---
+  const addPromotion = async (data: Partial<Promotion>) => {
+    const created = await api.createPromotion(data);
+    const newPromo: Promotion = created || {
+      id: `promo-${Date.now()}`,
+      code: (data.code || 'PROMO').toUpperCase(),
+      name: data.name || 'Nouvelle promotion',
+      cursusId: data.cursusId || 'cursus-tsrs',
+      cursus: data.cursus || 'Technicien Systèmes Réseaux & Sécurité',
+      status: data.status || 'active',
+      studentsCount: data.studentsCount ?? 0,
+      startDate: data.startDate || '01 oct. 2026',
+      endDate: data.endDate || '30 sept. 2027',
+      coordinator: data.coordinator || `${currentUser.firstName} ${currentUser.lastName}`,
+      referentTrainer: data.referentTrainer || 'Mourad',
+      schedulePace: data.schedulePace || '1 sem. école / 3 sem. entreprise',
+    };
+    setPromotions(prev => [newPromo, ...prev]);
+  };
+
+  const updatePromotion = async (id: string, data: Partial<Promotion>) => {
+    setPromotions(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
+    await api.updatePromotion(id, data);
+  };
+
+  const deletePromotion = async (id: string) => {
+    setPromotions(prev => prev.filter(p => p.id !== id));
+    await api.deletePromotion(id);
+  };
+
+  // --- CRUD COMPLET APPRENANTS ---
+  const addStudent = async (data: Partial<Student>) => {
+    const created = await api.createStudent(data);
+    const newStudent: Student = created || {
+      id: `stu-${Date.now()}`,
+      firstName: data.firstName || '',
+      lastName: data.lastName || '',
+      email: data.email || '',
+      phone: data.phone || '06 00 00 00 00',
+      promotionId: data.promotionId || promotions[0]?.id || '',
+      promotionName: data.promotionName || promotions[0]?.name || 'Helpline 40',
+      attendanceRate: data.attendanceRate ?? 100,
+      status: data.status || 'active',
+      companyName: data.companyName || 'Helpline',
+      companyTutor: data.companyTutor || 'Tuteur ESN',
+      alertsCount: 0,
+    };
+    setStudents(prev => [newStudent, ...prev]);
+  };
+
+  const updateStudent = async (id: string, data: Partial<Student>) => {
+    setStudents(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
+    await api.updateStudent(id, data);
+  };
+
+  const deleteStudent = async (id: string) => {
+    setStudents(prev => prev.filter(s => s.id !== id));
+    await api.deleteStudent(id);
+  };
+
+  // --- CRUD COMPLET ACTIONS ---
+  const updateAction = async (id: string, data: Partial<ActionItem>) => {
+    setActions(prev => prev.map(a => a.id === id ? { ...a, ...data } : a));
+    await api.updateAction(id, data);
+  };
+
+  const deleteAction = async (id: string) => {
+    setActions(prev => prev.filter(a => a.id !== id));
+    await api.deleteAction(id);
+  };
+
+  // --- CRUD COMPLET ENTRETIENS ---
+  const updateInterview = async (id: string, data: Partial<Interview>) => {
+    setInterviews(prev => prev.map(i => i.id === id ? { ...i, ...data } : i));
+    await api.updateInterview(id, data);
+  };
+
+  const deleteInterview = async (id: string) => {
+    setInterviews(prev => prev.filter(i => i.id !== id));
+    await api.deleteInterview(id);
+  };
+
+  // --- CRUD COMPLET RÉUNIONS ---
+  const addMeeting = async (data: { title: string; promotionId: string; scheduledAt: string; agenda: string }) => {
+    const promo = promotions.find(p => p.id === data.promotionId);
+    const payload = {
+      title: data.title,
+      promotionId: data.promotionId,
+      promotionName: promo ? promo.name : 'Promotion',
+      organizerName: `${currentUser.firstName} ${currentUser.lastName}`,
+      scheduledAt: data.scheduledAt,
+      agenda: data.agenda,
+      status: 'published' as const,
+      decisions: [],
+    };
+    const created = await api.createMeeting(payload);
+    const newMeeting: Meeting = created || {
+      id: `meet-${Date.now()}`,
+      organizerId: currentUser.id,
+      ...payload,
+    };
+    setMeetings(prev => [newMeeting, ...prev]);
+  };
+
+  const updateMeeting = async (id: string, data: Partial<Meeting>) => {
+    setMeetings(prev => prev.map(m => m.id === id ? { ...m, ...data } : m));
+    await api.updateMeeting(id, data);
+  };
+
+  const deleteMeeting = async (id: string) => {
+    setMeetings(prev => prev.filter(m => m.id !== id));
+    await api.deleteMeeting(id);
+  };
+
+  const addMeetingDecision = async (meetingId: string, topic: string, decision: string) => {
+    const newDec = { id: `dec-${Date.now()}`, topic, decision };
+    setMeetings(prev => prev.map(m => {
+      if (m.id === meetingId) {
+        const updatedDecisions = [...m.decisions, newDec];
+        api.updateMeeting(meetingId, { decisions: updatedDecisions }).catch(() => {});
+        return { ...m, decisions: updatedDecisions };
+      }
+      return m;
+    }));
+  };
+
+  // --- CRUD COMPLET DOCUMENTS ---
+  const addDocument = async (data: { title: string; fileName: string; fileSizeBytes?: number; mimeType?: string; promotionId?: string }) => {
+    const promo = promotions.find(p => p.id === data.promotionId);
+    const payload = {
+      title: data.title,
+      fileName: data.fileName,
+      fileSizeBytes: data.fileSizeBytes ?? 512000,
+      mimeType: data.mimeType || 'application/pdf',
+      promotionId: data.promotionId,
+      promotionName: promo ? promo.name : 'Global Campus',
+      uploadedByName: `${currentUser.firstName} ${currentUser.lastName}`,
+    };
+    const created = await api.createDocument(payload);
+    const newDoc: DocumentItem = created || {
+      id: `doc-${Date.now()}`,
+      uploadedAt: new Date().toISOString(),
+      ...payload,
+    };
+    setDocuments(prev => [newDoc, ...prev]);
+  };
+
+  const deleteDocument = async (id: string) => {
+    setDocuments(prev => prev.filter(d => d.id !== id));
+    await api.deleteDocument(id);
+  };
+
+  // --- CRUD COMPLET PLANNING ÉVÉNEMENTS ---
+  const addEvent = async (data: { title: string; description?: string; startTime: string; endTime: string; promotionId?: string; room?: string }) => {
+    const promo = promotions.find(p => p.id === data.promotionId);
+    const payload = {
+      title: data.title,
+      description: data.description || '',
+      startTime: data.startTime,
+      endTime: data.endTime,
+      promotionId: data.promotionId || promotions[0]?.id || '',
+      promotionName: promo ? promo.name : 'Campus Aston',
+      room: data.room || 'Salle Coordination',
+    };
+    const created = await api.createEvent(payload);
+    const newEvt: CalendarEvent = created || {
+      id: `evt-${Date.now()}`,
+      ...payload,
+      sourceType: 'aston_local',
+      isReadonly: false,
+    };
+    setEvents(prev => [newEvt, ...prev]);
+  };
+
+  const deleteEvent = async (id: string) => {
+    const evt = events.find(e => e.id === id);
+    if (evt?.isReadonly || evt?.sourceType === 'nevea_readonly') return;
+    setEvents(prev => prev.filter(e => e.id !== id));
+    await api.deleteEvent(id);
+  };
+
   const unreadNotificationsCount = notifications.filter(n => !n.isRead).length;
 
   return (
@@ -544,6 +783,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateActionStatus,
       addAction,
       convertDecisionToAction,
+      addPromotion,
+      updatePromotion,
+      deletePromotion,
+      addStudent,
+      updateStudent,
+      deleteStudent,
+      updateAction,
+      deleteAction,
+      updateInterview,
+      deleteInterview,
+      addMeeting,
+      updateMeeting,
+      deleteMeeting,
+      addMeetingDecision,
+      addDocument,
+      deleteDocument,
+      addEvent,
+      deleteEvent,
       markNotificationAsRead,
       markAllNotificationsAsRead,
       convertAlertToAction,

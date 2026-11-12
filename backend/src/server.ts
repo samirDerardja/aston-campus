@@ -165,6 +165,86 @@ server.get('/api/promotions/:id', async (request: FastifyRequest<{ Params: { id:
   return promo;
 });
 
+const promotionSchema = z.object({
+  code: z.string().min(2),
+  name: z.string().min(3),
+  cursus: z.string().optional(),
+  status: z.enum(['active', 'upcoming', 'completed', 'archived']).optional(),
+  studentsCount: z.number().int().nonnegative().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  coordinator: z.string().optional(),
+  referentTrainer: z.string().optional(),
+  schedulePace: z.string().optional(),
+});
+
+server.post('/api/promotions', async (request: FastifyRequest, reply: FastifyReply) => {
+  const data = promotionSchema.parse(request.body);
+  const newPromo = {
+    id: `promo-${Date.now()}`,
+    code: data.code.toUpperCase(),
+    name: data.name,
+    cursus: data.cursus || 'Technicien Systèmes Réseaux & Sécurité',
+    status: data.status || 'active',
+    studentsCount: data.studentsCount ?? 0,
+    startDate: data.startDate || '01 oct. 2026',
+    endDate: data.endDate || '30 sept. 2027',
+    coordinator: data.coordinator || 'Samir Derardja',
+    referentTrainer: data.referentTrainer || 'Mourad',
+    schedulePace: data.schedulePace || '1 sem. école / 3 sem. entreprise',
+  };
+
+  if (supabase) {
+    try {
+      await supabase.from('promotions').insert({
+        code: newPromo.code,
+        name: newPromo.name,
+        status: newPromo.status,
+      });
+    } catch {}
+  }
+
+  inMemoryDb.promotions.unshift(newPromo as any);
+  return reply.status(201).send(newPromo);
+});
+
+server.patch('/api/promotions/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const updates = promotionSchema.partial().parse(request.body);
+
+  if (supabase) {
+    try {
+      await supabase.from('promotions').update({
+        ...(updates.code && { code: updates.code }),
+        ...(updates.name && { name: updates.name }),
+        ...(updates.status && { status: updates.status }),
+      }).eq('id', id);
+    } catch {}
+  }
+
+  const idx = inMemoryDb.promotions.findIndex(p => p.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Promotion introuvable' });
+  }
+  inMemoryDb.promotions[idx] = { ...inMemoryDb.promotions[idx], ...updates } as any;
+  return inMemoryDb.promotions[idx];
+});
+
+server.delete('/api/promotions/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  if (supabase) {
+    try {
+      await supabase.from('promotions').delete().eq('id', id);
+    } catch {}
+  }
+  const idx = inMemoryDb.promotions.findIndex(p => p.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Promotion introuvable' });
+  }
+  inMemoryDb.promotions.splice(idx, 1);
+  return { success: true, id };
+});
+
 // --- MODULE APPRENANTS (STUDENTS) ---
 server.get('/api/students', async () => {
   if (supabase) {
@@ -197,6 +277,96 @@ server.get('/api/students/:id', async (request: FastifyRequest<{ Params: { id: s
     return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Apprenant introuvable' });
   }
   return student;
+});
+
+const studentSchema = z.object({
+  firstName: z.string().min(2),
+  lastName: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().optional(),
+  promotionId: z.string().optional(),
+  promotionName: z.string().optional(),
+  companyName: z.string().optional(),
+  tutorName: z.string().optional(),
+  status: z.enum(['active', 'resigned', 'interrupted', 'graduated']).optional(),
+  attendanceRate: z.number().min(0).max(100).optional(),
+  averageGrade: z.number().min(0).max(20).optional(),
+});
+
+server.post('/api/students', async (request: FastifyRequest, reply: FastifyReply) => {
+  const data = studentSchema.parse(request.body);
+  const newStudent = {
+    id: `stu-${Date.now()}`,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    email: data.email,
+    phone: data.phone || '06 00 00 00 00',
+    promotionId: data.promotionId || '33333333-0000-0000-0000-000000000010',
+    promotionName: data.promotionName || 'Helpline 40',
+    companyName: data.companyName || 'Helpline',
+    companyTutor: data.tutorName || 'Tuteur ESN',
+    tutorName: data.tutorName || 'Tuteur ESN',
+    status: data.status || 'active',
+    attendanceRate: data.attendanceRate ?? 100,
+    averageGrade: data.averageGrade ?? 14,
+    alertCount: 0,
+  };
+
+  if (supabase) {
+    try {
+      await supabase.from('students').insert({
+        first_name: newStudent.firstName,
+        last_name: newStudent.lastName,
+        email: newStudent.email,
+        phone: newStudent.phone,
+        company_name: newStudent.companyName,
+        company_tutor: newStudent.tutorName,
+      });
+    } catch {}
+  }
+
+  inMemoryDb.students.unshift(newStudent as any);
+  return reply.status(201).send(newStudent);
+});
+
+server.patch('/api/students/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const updates = studentSchema.partial().parse(request.body);
+
+  if (supabase) {
+    try {
+      await supabase.from('students').update({
+        ...(updates.firstName && { first_name: updates.firstName }),
+        ...(updates.lastName && { last_name: updates.lastName }),
+        ...(updates.email && { email: updates.email }),
+        ...(updates.phone && { phone: updates.phone }),
+        ...(updates.companyName && { company_name: updates.companyName }),
+        ...(updates.tutorName && { company_tutor: updates.tutorName }),
+      }).eq('id', id);
+    } catch {}
+  }
+
+  const idx = inMemoryDb.students.findIndex(s => s.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Apprenant introuvable' });
+  }
+  inMemoryDb.students[idx] = { ...inMemoryDb.students[idx], ...updates } as any;
+  return inMemoryDb.students[idx];
+});
+
+server.delete('/api/students/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  if (supabase) {
+    try {
+      await supabase.from('students').delete().eq('id', id);
+    } catch {}
+  }
+  const idx = inMemoryDb.students.findIndex(s => s.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Apprenant introuvable' });
+  }
+  inMemoryDb.students.splice(idx, 1);
+  return { success: true, id };
 });
 
 // --- MODULE PARTENAIRES ENTREPRISES (ESN) ---
@@ -380,6 +550,45 @@ server.patch('/api/actions/:id/status', async (request: FastifyRequest<{ Params:
   return { success: true, id, status };
 });
 
+server.patch('/api/actions/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const updates = createActionSchema.partial().parse(request.body);
+
+  if (supabase) {
+    try {
+      await supabase.from('action_items').update({
+        ...(updates.title && { title: updates.title }),
+        ...(updates.description && { description: updates.description }),
+        ...(updates.priority && { priority: updates.priority }),
+        ...(updates.status && { status: updates.status }),
+        ...(updates.dueDate && { due_date: updates.dueDate }),
+      }).eq('id', id);
+    } catch {}
+  }
+
+  const idx = inMemoryDb.actions.findIndex(a => a.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Action introuvable' });
+  }
+  inMemoryDb.actions[idx] = { ...inMemoryDb.actions[idx], ...updates } as any;
+  return inMemoryDb.actions[idx];
+});
+
+server.delete('/api/actions/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  if (supabase) {
+    try {
+      await supabase.from('action_items').delete().eq('id', id);
+    } catch {}
+  }
+  const idx = inMemoryDb.actions.findIndex(a => a.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Action introuvable' });
+  }
+  inMemoryDb.actions.splice(idx, 1);
+  return { success: true, id };
+});
+
 // --- MODULE ENTRETIENS ---
 server.get('/api/interviews', async () => {
   if (supabase) {
@@ -395,6 +604,8 @@ const createInterviewSchema = z.object({
   date: z.string(),
   type: z.string().optional(),
   location: z.string().optional(),
+  status: z.enum(['scheduled', 'completed', 'postponed', 'cancelled']).optional(),
+  report: z.any().optional(),
 });
 
 server.post('/api/interviews', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -406,12 +617,180 @@ server.post('/api/interviews', async (request: FastifyRequest, reply: FastifyRep
     role: 'Apprenant',
     date: data.date,
     type: data.type || 'apprenant_individuel',
-    status: 'scheduled',
+    status: data.status || 'scheduled',
     location: data.location || 'Bureau Coordination B201',
   };
 
   inMemoryDb.interviews.unshift(newInterview as any);
   return reply.status(201).send(newInterview);
+});
+
+server.patch('/api/interviews/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const updates = createInterviewSchema.partial().parse(request.body);
+  const idx = inMemoryDb.interviews.findIndex(i => i.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Entretien introuvable' });
+  }
+  inMemoryDb.interviews[idx] = { ...inMemoryDb.interviews[idx], ...updates } as any;
+  return inMemoryDb.interviews[idx];
+});
+
+server.delete('/api/interviews/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const idx = inMemoryDb.interviews.findIndex(i => i.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Entretien introuvable' });
+  }
+  inMemoryDb.interviews.splice(idx, 1);
+  return { success: true, id };
+});
+
+// --- MODULE RÉUNIONS / SYNCHRONISATIONS ---
+const meetingSchema = z.object({
+  title: z.string().min(3),
+  promotionId: z.string().optional(),
+  promotionName: z.string().optional(),
+  organizerName: z.string().optional(),
+  scheduledAt: z.string(),
+  agenda: z.string().optional(),
+  status: z.enum(['draft', 'published', 'archived']).optional(),
+  decisions: z.array(z.any()).optional(),
+});
+
+server.get('/api/meetings', async () => {
+  return (inMemoryDb as any).meetings || [];
+});
+
+server.post('/api/meetings', async (request: FastifyRequest, reply: FastifyReply) => {
+  const data = meetingSchema.parse(request.body);
+  const newMeeting = {
+    id: `meet-${Date.now()}`,
+    title: data.title,
+    promotionId: data.promotionId || '33333333-0000-0000-0000-000000000001',
+    promotionName: data.promotionName || 'Helpline 40',
+    organizerId: 'usr-samir-01',
+    organizerName: data.organizerName || 'Samir Derardja',
+    scheduledAt: data.scheduledAt,
+    agenda: data.agenda || '1. Point assiduité\n2. Suivi alternance',
+    status: data.status || 'published',
+    decisions: data.decisions || [],
+  };
+  (inMemoryDb as any).meetings.unshift(newMeeting);
+  return reply.status(201).send(newMeeting);
+});
+
+server.patch('/api/meetings/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const updates = meetingSchema.partial().parse(request.body);
+  const meetings: any[] = (inMemoryDb as any).meetings || [];
+  const idx = meetings.findIndex(m => m.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Réunion introuvable' });
+  }
+  meetings[idx] = { ...meetings[idx], ...updates };
+  return meetings[idx];
+});
+
+server.delete('/api/meetings/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const meetings: any[] = (inMemoryDb as any).meetings || [];
+  const idx = meetings.findIndex(m => m.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Réunion introuvable' });
+  }
+  meetings.splice(idx, 1);
+  return { success: true, id };
+});
+
+// --- MODULE DOCUMENTS ---
+const documentSchema = z.object({
+  title: z.string().min(2),
+  fileName: z.string().min(2),
+  fileSizeBytes: z.number().optional(),
+  mimeType: z.string().optional(),
+  promotionId: z.string().optional(),
+  promotionName: z.string().optional(),
+  uploadedByName: z.string().optional(),
+});
+
+server.get('/api/documents', async () => {
+  return (inMemoryDb as any).documents || [];
+});
+
+server.post('/api/documents', async (request: FastifyRequest, reply: FastifyReply) => {
+  const data = documentSchema.parse(request.body);
+  const newDoc = {
+    id: `doc-${Date.now()}`,
+    title: data.title,
+    fileName: data.fileName,
+    fileSizeBytes: data.fileSizeBytes ?? 512000,
+    mimeType: data.mimeType || 'application/pdf',
+    promotionId: data.promotionId,
+    promotionName: data.promotionName || 'Global Campus',
+    uploadedAt: new Date().toISOString(),
+    uploadedByName: data.uploadedByName || 'Samir Derardja',
+  };
+  (inMemoryDb as any).documents.unshift(newDoc);
+  return reply.status(201).send(newDoc);
+});
+
+server.delete('/api/documents/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  const docs: any[] = (inMemoryDb as any).documents || [];
+  const idx = docs.findIndex(d => d.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Document introuvable' });
+  }
+  docs.splice(idx, 1);
+  return { success: true, id };
+});
+
+// --- MODULE PLANNING ÉVÉNEMENTS LOCAUX ---
+const eventSchema = z.object({
+  title: z.string().min(2),
+  description: z.string().optional(),
+  startTime: z.string(),
+  endTime: z.string(),
+  promotionId: z.string().optional(),
+  promotionName: z.string().optional(),
+  room: z.string().optional(),
+});
+
+server.get('/api/events', async () => {
+  return (inMemoryDb as any).events || [];
+});
+
+server.post('/api/events', async (request: FastifyRequest, reply: FastifyReply) => {
+  const data = eventSchema.parse(request.body);
+  const newEvt = {
+    id: `evt-${Date.now()}`,
+    title: data.title,
+    description: data.description || '',
+    startTime: data.startTime,
+    endTime: data.endTime,
+    promotionId: data.promotionId || '33333333-0000-0000-0000-000000000010',
+    promotionName: data.promotionName || 'Helpline 40',
+    room: data.room || 'Salle Coordination',
+    sourceType: 'aston_local',
+    isReadonly: false,
+  };
+  (inMemoryDb as any).events.unshift(newEvt);
+  return reply.status(201).send(newEvt);
+});
+
+server.delete('/api/events/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  const { id } = request.params;
+  if (id.includes('nevea')) {
+    return reply.status(403).send({ code: 'ASTON_ERR_READONLY', message: 'Cours Nevea en lecture seule' });
+  }
+  const events: any[] = (inMemoryDb as any).events || [];
+  const idx = events.findIndex(e => e.id === id);
+  if (idx === -1) {
+    return reply.status(404).send({ code: 'ASTON_ERR_NOT_FOUND', message: 'Événement introuvable' });
+  }
+  events.splice(idx, 1);
+  return { success: true, id };
 });
 
 // --- MODULE SESSIONS & PROTECTION STRICTE NEVEA ---

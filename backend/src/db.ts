@@ -631,6 +631,54 @@ export let inMemoryDb = {
       role: 'Formateur',
       location: 'Salle des formateurs'
     }
+  ],
+  meetings: [
+    {
+      id: 'meet-1',
+      title: 'Synchronisation Dev Web',
+      promotionId: '33333333-0000-0000-0000-000000000001',
+      promotionName: 'Développeur Web - 2025',
+      organizerId: 'usr-samir-01',
+      organizerName: 'Samir Derardja',
+      scheduledAt: 'Demain • 14:00',
+      agenda: '1. Assiduité globale\n2. Rythme des livrables React\n3. Soutien SQL',
+      status: 'published',
+      decisions: [
+        {
+          id: 'dec-1',
+          topic: 'Renforcement en SQL pour Thomas Dubois',
+          decision: 'Mettre en place un plan de renforcement avant le 20 nov.',
+          convertedToActionId: '99999999-0000-0000-0000-000000000003'
+        }
+      ]
+    }
+  ],
+  documents: [
+    {
+      id: 'doc-1',
+      title: 'Programme pédagogique BTS DW 2025',
+      fileName: 'Programme_DW2025_Aston.pdf',
+      fileSizeBytes: 1820000,
+      mimeType: 'application/pdf',
+      promotionId: '33333333-0000-0000-0000-000000000001',
+      promotionName: 'Développeur Web - 2025',
+      uploadedAt: '2025-09-02T09:30:00+01:00',
+      uploadedByName: 'Samir Derardja'
+    }
+  ],
+  events: [
+    {
+      id: 'evt-4',
+      title: 'Comité pédagogique TSRS / Helpline',
+      description: 'Point d\'étape assiduité et suivis entreprise',
+      startTime: '2026-11-12T14:00:00+01:00',
+      endTime: '2026-11-12T15:30:00+01:00',
+      promotionId: '33333333-0000-0000-0000-000000000010',
+      promotionName: 'Helpline 40',
+      room: 'Salle Réunion A',
+      sourceType: 'aston_local',
+      isReadonly: false
+    }
   ]
 };
 
