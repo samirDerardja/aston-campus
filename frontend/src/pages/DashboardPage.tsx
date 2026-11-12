@@ -14,7 +14,7 @@ import { StudentAlert } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { alerts, partners, convertAlertToAction, dismissAlert } = useApp();
+  const { alerts, partners, convertAlertToAction, dismissAlert, currentUser } = useApp();
 
   const [alertFilter, setAlertFilter] = useState<'all' | 'absences' | 'retards' | 'helpline' | 'xefi'>('all');
   const [contactModalAlert, setContactModalAlert] = useState<StudentAlert | null>(null);
@@ -124,7 +124,7 @@ export const DashboardPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Bonjour Samir 👋
+            Bonjour {currentUser.firstName} 👋
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Voici la situation pédagogique du campus Aston Informatique • Rythme alternance : 1 sem. école / 3 sem. entreprise
@@ -193,7 +193,7 @@ export const DashboardPage: React.FC = () => {
 
         {/* Carte 3 : Formateurs Référents (Mourad, Christelle, Mehdi) */}
         <div 
-          onClick={() => navigate('/formateurs')}
+          onClick={() => navigate('/promotions')}
           className="glass-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center justify-between text-xs text-slate-500 font-bold uppercase tracking-wider font-mono">

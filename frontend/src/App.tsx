@@ -10,7 +10,7 @@ import { PromotionsPage } from './pages/PromotionsPage';
 import { PromotionDetailPage } from './pages/PromotionDetailPage';
 import { StudentsPage } from './pages/StudentsPage';
 import { StudentDetailPage } from './pages/StudentDetailPage';
-import { TrainersPage } from './pages/TrainersPage';
+// import { TrainersPage } from './pages/TrainersPage'; // Masqué temporairement en front-end
 import { InterviewsPage } from './pages/InterviewsPage';
 import { MeetingsPage } from './pages/MeetingsPage';
 import { ActionsPage } from './pages/ActionsPage';
@@ -55,7 +55,8 @@ export const App: React.FC = () => {
                   <Route path="/promotions/:id" element={<PromotionDetailPage />} />
                   <Route path="/apprenants" element={<StudentsPage />} />
                   <Route path="/apprenants/:id" element={<StudentDetailPage />} />
-                  <Route path="/formateurs" element={<TrainersPage />} />
+                  {/* Route Formateurs masquée temporairement côté front (architecture conservée) */}
+                  <Route path="/formateurs" element={<Navigate to="/" replace />} />
                   <Route path="/entretiens" element={<InterviewsPage />} />
                   <Route path="/synchronisations" element={<MeetingsPage />} />
                   <Route path="/actions" element={<ActionsPage />} />

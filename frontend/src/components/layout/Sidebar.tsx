@@ -1,31 +1,41 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, GraduationCap, Users, UserCheck, 
+  LayoutDashboard, GraduationCap, Users, 
   MessageSquare, RefreshCw, CheckSquare, Calendar, 
-  FileText, BarChart3
+  FileText, BarChart3, FileSpreadsheet
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { UserRole } from '../../types';
 
 export const Sidebar: React.FC = () => {
-  const { actions } = useApp();
+  const { actions, currentUser, switchRole } = useApp();
   const overdueCount = actions.filter(
     a => a.status !== 'completed' && a.status !== 'cancelled' && new Date(a.dueDate) < new Date()
   ).length || 7;
 
-  // Exact 10 navigation items strictly for Aston Campus coordination
+  // Navigation dédiée uniquement au Coordinateur Pédagogique, Responsable Pédagogique et Assistante Administrative
+  // (Les vues Formateurs / Admin Technique sont masquées en frontend sans modifier la BDD)
   const navigationItems = [
     { name: 'Tableau de bord', to: '/', icon: LayoutDashboard },
+    { name: 'Import Nevea (CSV)', to: '/import-nevea', icon: FileSpreadsheet },
     { name: 'Promotions', to: '/promotions', icon: GraduationCap },
     { name: 'Apprenants', to: '/apprenants', icon: Users },
-    { name: 'Formateurs', to: '/formateurs', icon: UserCheck },
+    { name: 'Actions', to: '/actions', icon: CheckSquare, badge: overdueCount },
     { name: 'Entretiens', to: '/entretiens', icon: MessageSquare },
     { name: 'Synchronisations', to: '/synchronisations', icon: RefreshCw },
-    { name: 'Actions', to: '/actions', icon: CheckSquare, badge: overdueCount },
     { name: 'Planning', to: '/planning', icon: Calendar },
     { name: 'Documents', to: '/documents', icon: FileText },
     { name: 'Reporting', to: '/reporting', icon: BarChart3 },
   ];
+
+  const roleLabels: Record<string, string> = {
+    coordinateur: 'Coordinateur Pédagogique',
+    direction: 'Responsable Pédagogique',
+    assistante_admin: 'Assistante Administrative',
+  };
+
+  const initials = `${currentUser.firstName?.[0] || ''}${currentUser.lastName?.[0] || ''}`.toUpperCase() || 'SD';
 
   return (
     <aside className="w-64 bg-white/70 backdrop-blur-2xl text-slate-700 flex flex-col justify-between shrink-0 select-none border-r border-white/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 font-sans h-full transition-all">
@@ -43,13 +53,13 @@ export const Sidebar: React.FC = () => {
                 Aston Campus
               </span>
               <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-600 font-mono">
-                PÉDAGOGIE LUXE
+                PÉDAGOGIE & ADMIN
               </span>
             </div>
           </NavLink>
         </div>
 
-        {/* 10 Navigation items with glassmorphic hover and luxury dark active pill */}
+        {/* Navigation items with glassmorphic hover and luxury dark active pill */}
         <nav className="space-y-1.5">
           {navigationItems.map((item) => (
             <NavLink
@@ -78,20 +88,35 @@ export const Sidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* Connected User Profile Footer with Translucent Glass Card */}
-      <div className="p-3 border-t border-white/50 bg-white/40 backdrop-blur-md">
+      {/* Connected User Profile Footer with Role Switcher (3 profils actifs uniquement) */}
+      <div className="p-3 border-t border-white/50 bg-white/40 backdrop-blur-md space-y-2">
         <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-white/70 border border-white/80 shadow-2xs">
           <div className="flex items-center space-x-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center font-mono shadow-xs">
-              SD
+            <div className="w-8 h-8 rounded-xl bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center font-mono shadow-xs shrink-0">
+              {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-900 truncate">Samir Derardja</p>
-              <p className="text-[10px] text-emerald-600 font-semibold leading-tight">Coordination</p>
+              <p className="text-xs font-bold text-slate-900 truncate">
+                {currentUser.firstName} {currentUser.lastName}
+              </p>
+              <p className="text-[10px] text-emerald-600 font-semibold leading-tight truncate">
+                {roleLabels[currentUser.role] || 'Coordinateur Pédagogique'}
+              </p>
             </div>
           </div>
-          <span className="w-2 h-2 rounded-full bg-[#00D084] shadow-sm shadow-[#00D084]/60 animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-[#00D084] shadow-sm shadow-[#00D084]/60 animate-pulse shrink-0"></span>
         </div>
+
+        <select
+          aria-label="Changer de profil actif"
+          value={roleLabels[currentUser.role] ? currentUser.role : 'coordinateur'}
+          onChange={(e) => switchRole(e.target.value as UserRole)}
+          className="w-full text-[11px] font-semibold text-slate-700 bg-white/80 hover:bg-white border border-slate-200/80 rounded-xl px-2.5 py-1.5 outline-none cursor-pointer transition"
+        >
+          <option value="coordinateur">Vue : Coordinateur Pédagogique</option>
+          <option value="direction">Vue : Responsable Pédagogique</option>
+          <option value="assistante_admin">Vue : Assistante Administrative</option>
+        </select>
       </div>
     </aside>
   );

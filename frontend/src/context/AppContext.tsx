@@ -176,6 +176,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const switchRole = (newRole: UserProfile['role']) => {
     let name = 'Samir Derardja';
     if (newRole === 'direction') name = 'Claire Dubois';
+    if (newRole === 'assistante_admin') name = 'Sarah Martin';
     if (newRole === 'formateur') name = 'Thomas Moreau';
     if (newRole === 'admin_technique') name = 'Alexandre Admin';
 

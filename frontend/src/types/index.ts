@@ -1,4 +1,4 @@
-export type UserRole = 'direction' | 'coordinateur' | 'formateur' | 'admin_technique';
+export type UserRole = 'direction' | 'coordinateur' | 'assistante_admin' | 'formateur' | 'admin_technique';
 
 export type PromotionStatus = 'active' | 'upcoming' | 'completed' | 'archived';
 

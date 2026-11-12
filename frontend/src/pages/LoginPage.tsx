@@ -9,14 +9,13 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>('coordinateur');
-  const [email, setEmail] = useState('marc.lefevre@aston-campus.demo');
+  const [email, setEmail] = useState('samir.derardja@aston.fr');
   const [password, setPassword] = useState('••••••••••••');
 
   const demoAccounts = [
-    { role: 'coordinateur' as UserRole, name: 'Marc Lefèvre', title: 'Coordinateur Pédagogique', email: 'marc.lefevre@aston-campus.demo' },
-    { role: 'direction' as UserRole, name: 'Claire Dubois', title: 'Direction Pédagogique', email: 'claire.dubois@aston-campus.demo' },
-    { role: 'formateur' as UserRole, name: 'Thomas Moreau', title: 'Formateur Référent', email: 'thomas.moreau@aston-campus.demo' },
-    { role: 'admin_technique' as UserRole, name: 'Alexandre Admin', title: 'Admin Technique', email: 'admin@aston-campus.demo' },
+    { role: 'coordinateur' as UserRole, name: 'Samir Derardja', title: 'Coordinateur Pédagogique', email: 'samir.derardja@aston.fr' },
+    { role: 'direction' as UserRole, name: 'Claire Dubois', title: 'Responsable Pédagogique', email: 'claire.dubois@aston.fr' },
+    { role: 'assistante_admin' as UserRole, name: 'Sarah Martin', title: 'Assistante Administrative', email: 'sarah.martin@aston.fr' },
   ];
 
   const handleSelectDemo = (acc: typeof demoAccounts[0]) => {

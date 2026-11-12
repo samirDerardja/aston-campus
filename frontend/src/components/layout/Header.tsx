@@ -4,16 +4,16 @@ import { Search, Bell, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const Header: React.FC = () => {
-  const { setCommandPaletteOpen, unreadNotificationsCount, isBackendConnected } = useApp();
+  const { setCommandPaletteOpen, unreadNotificationsCount, currentUser } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
   const getBreadcrumb = () => {
     const path = location.pathname;
     if (path === '/') return 'Tableau de bord';
+    if (path.startsWith('/import-nevea')) return 'Import Nevea (CSV)';
     if (path.startsWith('/promotions')) return 'Promotions & Cursus';
     if (path.startsWith('/apprenants')) return 'Apprenants';
-    if (path.startsWith('/formateurs')) return 'Formateurs';
     if (path.startsWith('/entretiens')) return 'Entretiens d\'accompagnement';
     if (path.startsWith('/synchronisations')) return 'Synchronisations';
     if (path.startsWith('/actions')) return 'Actions correctives';
@@ -22,6 +22,14 @@ export const Header: React.FC = () => {
     if (path.startsWith('/reporting')) return 'Reporting & Indicateurs';
     return 'Coordination Pédagogique';
   };
+
+  const roleBadge: Record<string, string> = {
+    coordinateur: 'COORDINATION',
+    direction: 'RESP. PÉDAGOGIQUE',
+    assistante_admin: 'ASSISTANTE ADMIN',
+  };
+
+  const initials = `${currentUser.firstName?.[0] || ''}${currentUser.lastName?.[0] || ''}`.toUpperCase() || 'SD';
 
   return (
     <header className="h-16 bg-white/70 backdrop-blur-xl border-b border-white/60 px-6 lg:px-8 flex items-center justify-between shrink-0 z-10 font-sans shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
@@ -42,16 +50,6 @@ export const Header: React.FC = () => {
         <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#00D084]/10 text-emerald-800 border border-[#00D084]/25 text-[10px] font-bold font-mono tracking-wider backdrop-blur-md shadow-2xs">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00D084] animate-pulse"></span>
           <span>PLANNING & SUIVI ACTIF</span>
-        </div>
-
-        {/* Backend & Database Status Badge */}
-        <div className={`hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono tracking-wider border backdrop-blur-md ${
-          isBackendConnected 
-            ? 'bg-blue-500/10 text-blue-800 border-blue-500/20' 
-            : 'bg-slate-100 text-slate-500 border-slate-200'
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${isBackendConnected ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'}`}></span>
-          <span>{isBackendConnected ? 'API FASTIFY & DB' : 'MODE AUTONOME'}</span>
         </div>
       </div>
 
@@ -93,11 +91,15 @@ export const Header: React.FC = () => {
         {/* Profile Card */}
         <div className="flex items-center space-x-2.5 pl-2 border-l border-slate-200/60">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-bold text-slate-900 leading-tight">Samir Derardja</p>
-            <p className="text-[10px] text-emerald-600 font-bold leading-tight font-mono">COORDINATION</p>
+            <p className="text-xs font-bold text-slate-900 leading-tight">
+              {currentUser.firstName} {currentUser.lastName}
+            </p>
+            <p className="text-[10px] text-emerald-600 font-bold leading-tight font-mono">
+              {roleBadge[currentUser.role] || 'COORDINATION'}
+            </p>
           </div>
           <div className="w-8 h-8 rounded-xl bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center font-mono shadow-xs border border-white/40">
-            SD
+            {initials}
           </div>
         </div>
       </div>

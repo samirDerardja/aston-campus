@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Search, GraduationCap, Users, UserCheck, CalendarCheck, CheckSquare, X } from 'lucide-react';
+import { Search, GraduationCap, Users, CalendarCheck, CheckSquare, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 export const CommandPalette: React.FC = () => {
-  const { isCommandPaletteOpen, setCommandPaletteOpen, promotions, students, trainers } = useApp();
+  const { isCommandPaletteOpen, setCommandPaletteOpen, promotions, students } = useApp();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
@@ -19,10 +19,6 @@ export const CommandPalette: React.FC = () => {
     `${s.firstName} ${s.lastName}`.toLowerCase().includes(query.toLowerCase()) ||
     s.companyName.toLowerCase().includes(query.toLowerCase())
   ).slice(0, 3);
-
-  const filteredTrainers = trainers.filter(t => 
-    `${t.firstName} ${t.lastName}`.toLowerCase().includes(query.toLowerCase())
-  ).slice(0, 2);
 
   const handleSelect = (url: string) => {
     navigate(url);
@@ -41,7 +37,7 @@ export const CommandPalette: React.FC = () => {
           <input
             type="text"
             autoFocus
-            placeholder="Tapez pour naviguer : promotions, apprenants, formateurs..."
+            placeholder="Tapez pour naviguer : promotions, apprenants, actions..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full text-sm outline-none text-slate-800 placeholder-slate-400"
@@ -86,24 +82,6 @@ export const CommandPalette: React.FC = () => {
                   <Users className="w-4 h-4 text-emerald-500 shrink-0" />
                   <span className="font-medium text-slate-900">{s.firstName} {s.lastName}</span>
                   <span className="text-slate-400 text-[11px]">({s.companyName})</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Section Formateurs */}
-          {filteredTrainers.length > 0 && (
-            <div className="py-1">
-              <span className="px-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Formateurs</span>
-              {filteredTrainers.map(t => (
-                <div
-                  key={t.id}
-                  onClick={() => handleSelect('/formateurs')}
-                  className="flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 cursor-pointer text-slate-700"
-                >
-                  <UserCheck className="w-4 h-4 text-violet-500 shrink-0" />
-                  <span className="font-medium text-slate-900">{t.firstName} {t.lastName}</span>
-                  <span className="text-slate-400 text-[11px] truncate">{t.specialties.join(', ')}</span>
                 </div>
               ))}
             </div>
