@@ -6,7 +6,7 @@ import {
 
 export const CURRENT_USER: UserProfile = {
   id: 'usr-samir-01',
-  email: 'samir.derardja@aston.fr',
+  email: 'samirderardja10@gmail.com',
   firstName: 'Samir',
   lastName: 'Derardja',
   role: 'coordinateur',

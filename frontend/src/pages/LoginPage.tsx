@@ -8,60 +8,39 @@ import {
   Eye,
   EyeOff,
   User,
-  Sparkles,
-  KeyRound,
   AlertCircle,
   CheckCircle2,
   Loader2,
   ShieldCheck,
 } from 'lucide-react';
-import { UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-type AuthMode = 'signin' | 'signup' | 'magic-link' | 'forgot-password';
+type AuthMode = 'signin' | 'signup' | 'forgot-password';
 
 export const LoginPage: React.FC = () => {
   const { login, refreshAuthSession } = useApp();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState<AuthMode>('signin');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('coordinateur');
-  const [email, setEmail] = useState('samir.derardja@aston.fr');
+  const [email, setEmail] = useState('samirderardja10@gmail.com');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-  // Identifiants actifs Aston Campus (3 rôles ciblés)
-  const astonAccounts = [
-    { role: 'coordinateur' as UserRole, name: 'Samir Derardja', title: 'Coordinateur Pédagogique', email: 'samir.derardja@aston.fr' },
-    { role: 'direction' as UserRole, name: 'Claire Dubois', title: 'Responsable Pédagogique', email: 'claire.dubois@aston.fr' },
-    { role: 'assistante_admin' as UserRole, name: 'Sarah Martin', title: 'Assistante Administrative', email: 'sarah.martin@aston.fr' },
-  ];
-
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
     setErrorMsg(null);
     setSuccessMsg(null);
-    setOtpSent(false);
-    setOtpCode('');
-  };
-
-  const handleSelectAccount = (acc: typeof astonAccounts[0]) => {
-    setSelectedRole(acc.role);
-    setEmail(acc.email);
-    setErrorMsg(null);
   };
 
   const handleQuickDemoAccess = () => {
-    login(selectedRole);
+    login('coordinateur');
     navigate('/');
   };
 
@@ -100,39 +79,6 @@ export const LoginPage: React.FC = () => {
       setErrorMsg(
         "Supabase n'est pas encore configuré. Renseignez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY."
       );
-      return;
-    }
-
-    // 1. Validation du code OTP (Lien magique en cours)
-    if (mode === 'magic-link' && otpSent) {
-      if (!otpCode.trim()) {
-        setErrorMsg('Veuillez renseigner le code à chiffres reçu par email.');
-        return;
-      }
-      setLoading(true);
-      try {
-        let { error } = await supabase.auth.verifyOtp({
-          email: email.trim(),
-          token: otpCode.trim(),
-          type: 'email',
-        });
-        if (error && (error.message.toLowerCase().includes('type') || error.message.toLowerCase().includes('invalid'))) {
-          const retry = await supabase.auth.verifyOtp({
-            email: email.trim(),
-            token: otpCode.trim(),
-            type: 'magiclink',
-          });
-          if (!retry.error) error = null;
-        }
-        if (error) throw error;
-        setSuccessMsg('Code validé avec succès ! Connexion en cours...');
-        await refreshAuthSession();
-        navigate('/');
-      } catch (err: any) {
-        setErrorMsg(err?.message || 'Code invalide ou expiré. Vérifiez les chiffres reçus par email.');
-      } finally {
-        setLoading(false);
-      }
       return;
     }
 
@@ -181,16 +127,6 @@ export const LoginPage: React.FC = () => {
           }
           if (!sent) throw supaErr;
         }
-      } else if (mode === 'magic-link') {
-        const { error } = await supabase.auth.signInWithOtp({
-          email: email.trim(),
-          options: {
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        setOtpSent(true);
-        setSuccessMsg('Email envoyé ! Cliquez sur le lien dans votre boîte mail ou entrez ci-dessous votre code à chiffres.');
       } else if (mode === 'signup') {
         const cleanFullName = fullName.trim();
         const cleanEmail = email.trim();
@@ -314,15 +250,13 @@ export const LoginPage: React.FC = () => {
           <p className="text-xs text-slate-500 mt-1">
             {mode === 'signup'
               ? 'Créez votre compte coordination Aston Campus'
-              : mode === 'magic-link'
-              ? 'Connexion sécurisée sans mot de passe'
               : mode === 'forgot-password'
               ? 'Réinitialisation de votre mot de passe'
               : 'Plateforme interne de coordination pédagogique'}
           </p>
 
           {/* Onglets de flux d'authentification */}
-          <div className="mt-4 grid grid-cols-3 gap-1 p-1 bg-slate-100/80 rounded-2xl text-[11px] font-bold">
+          <div className="mt-4 grid grid-cols-2 gap-1 p-1 bg-slate-100/80 rounded-2xl text-[11px] font-bold">
             <button
               type="button"
               onClick={() => switchMode('signin')}
@@ -344,18 +278,6 @@ export const LoginPage: React.FC = () => {
               }`}
             >
               Inscription
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode('magic-link')}
-              className={`py-2 rounded-xl transition flex items-center justify-center gap-1 ${
-                mode === 'magic-link'
-                  ? 'bg-[#0F172A] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Sparkles className="w-3 h-3 text-[#00D084]" />
-              <span>OTP / Lien</span>
             </button>
           </div>
         </div>
@@ -392,22 +314,20 @@ export const LoginPage: React.FC = () => {
             </div>
           )}
 
-          {!(mode === 'magic-link' && otpSent) && (
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Adresse email professionnelle</label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="prenom.nom@aston.fr"
-                  className="w-full pl-10 pr-3 py-2.5 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
-                />
-              </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-700">Adresse email</label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="samirderardja10@gmail.com"
+                className="w-full pl-10 pr-3 py-2.5 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
+              />
             </div>
-          )}
+          </div>
 
           {(mode === 'signin' || mode === 'signup') && (
             <div className="space-y-1">
@@ -445,33 +365,6 @@ export const LoginPage: React.FC = () => {
             </div>
           )}
 
-          {mode === 'magic-link' && otpSent && (
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-700">Code de vérification à chiffres</label>
-              <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="123456"
-                  className="w-full pl-10 pr-3 py-2.5 text-xs font-mono tracking-widest bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setOtpSent(false);
-                  setOtpCode('');
-                }}
-                className="text-[11px] font-semibold text-slate-500 hover:text-slate-800"
-              >
-                ← Modifier l'adresse email
-              </button>
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={loading}
@@ -487,10 +380,6 @@ export const LoginPage: React.FC = () => {
                 ? 'Traitement en cours...'
                 : mode === 'signup'
                 ? 'Créer mon compte Aston'
-                : mode === 'magic-link'
-                ? otpSent
-                  ? 'Valider le code OTP'
-                  : 'Recevoir mon lien / code magique'
                 : mode === 'forgot-password'
                 ? 'Envoyer le lien de réinitialisation'
                 : 'Se connecter à Aston Campus'}
@@ -536,41 +425,19 @@ export const LoginPage: React.FC = () => {
             </>
           )}
 
-          {/* Identifiants Aston Campus (3 rôles actifs) */}
-          <div className="pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#00D084]" />
-                <span>Identifiants Aston Campus</span>
-              </label>
-              <button
-                type="button"
-                onClick={handleQuickDemoAccess}
-                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 underline"
-              >
-                Accès rapide démo →
-              </button>
-            </div>
-            <div className="grid grid-cols-1 gap-1.5">
-              {astonAccounts.map((acc) => (
-                <button
-                  type="button"
-                  key={acc.role}
-                  onClick={() => handleSelectAccount(acc)}
-                  className={`p-2.5 rounded-xl border text-left text-[11px] transition flex items-center justify-between ${
-                    selectedRole === acc.role && email === acc.email
-                      ? 'border-[#0F172A] bg-slate-900/5 font-semibold text-slate-900'
-                      : 'border-slate-200/80 bg-white/60 hover:border-slate-300 text-slate-600'
-                  }`}
-                >
-                  <div>
-                    <span className="block font-bold text-slate-900">{acc.name}</span>
-                    <span className="text-[10px] text-slate-500">{acc.title}</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400">{acc.email}</span>
-                </button>
-              ))}
-            </div>
+          {/* Identifiant principal Aston Campus */}
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#00D084]" />
+              <span>Samir Derardja</span>
+            </span>
+            <button
+              type="button"
+              onClick={handleQuickDemoAccess}
+              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline"
+            >
+              Accès rapide démo →
+            </button>
           </div>
         </form>
 
