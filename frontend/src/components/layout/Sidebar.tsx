@@ -3,13 +3,13 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, GraduationCap, Users, 
   MessageSquare, RefreshCw, CheckSquare, Calendar, 
-  FileText, BarChart3, FileSpreadsheet
+  FileText, BarChart3, FileSpreadsheet, LogOut
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 
 export const Sidebar: React.FC = () => {
-  const { actions, currentUser, switchRole } = useApp();
+  const { actions, currentUser, switchRole, logout } = useApp();
   const overdueCount = actions.filter(
     a => a.status !== 'completed' && a.status !== 'cancelled' && new Date(a.dueDate) < new Date()
   ).length || 7;
@@ -117,6 +117,15 @@ export const Sidebar: React.FC = () => {
           <option value="direction">Vue : Responsable Pédagogique</option>
           <option value="assistante_admin">Vue : Assistante Administrative</option>
         </select>
+
+        <button
+          type="button"
+          onClick={logout}
+          className="w-full flex items-center justify-center space-x-1.5 text-[11px] font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50/80 rounded-xl py-1.5 transition"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Se déconnecter</span>
+        </button>
       </div>
     </aside>
   );

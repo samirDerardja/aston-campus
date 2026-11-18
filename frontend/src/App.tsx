@@ -1,9 +1,11 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { CommandPalette } from './components/layout/CommandPalette';
+import { ResetPasswordModal } from './components/ResetPasswordModal';
+import { LoginPage } from './pages/LoginPage';
 
 import { DashboardPage } from './pages/DashboardPage';
 import { PromotionsPage } from './pages/PromotionsPage';
@@ -19,11 +21,31 @@ import { DocumentsPage } from './pages/DocumentsPage';
 import { ReportingPage } from './pages/ReportingPage';
 import { ImportNeveaPage } from './pages/ImportNeveaPage';
 
-export const App: React.FC = () => {
+const AppShell: React.FC = () => {
+  const { isAuthenticated, authLoading, passwordRecoveryOpen, setPasswordRecoveryOpen, refreshAuthSession } = useApp();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen w-full bg-[#F8F9FB] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#0F172A] text-[#00D084] flex items-center justify-center font-black text-lg animate-pulse">
+            A
+          </div>
+          <span className="text-xs font-semibold text-slate-500">Vérification de la session...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AppProvider>
-      <BrowserRouter>
-        {/* Luxury Glassmorphic Ambient Canvas */}
+    <>
+      {!isAuthenticated ? (
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      ) : (
+        /* Luxury Glassmorphic Ambient Canvas */
         <div className="relative flex h-screen w-full bg-[#F8F9FB] font-sans text-slate-800 antialiased overflow-hidden selection:bg-[#00D084]/20 selection:text-slate-900">
           
           {/* Subtle Ambient Background Gradients for Glass Translucency */}
@@ -51,6 +73,7 @@ export const App: React.FC = () => {
               <div className="max-w-7xl mx-auto pb-12">
                 <Routes>
                   <Route path="/" element={<DashboardPage />} />
+                  <Route path="/login" element={<Navigate to="/" replace />} />
                   <Route path="/promotions" element={<PromotionsPage />} />
                   <Route path="/promotions/:id" element={<PromotionDetailPage />} />
                   <Route path="/apprenants" element={<StudentsPage />} />
@@ -73,6 +96,24 @@ export const App: React.FC = () => {
           {/* Quick command palette (Cmd+K) */}
           <CommandPalette />
         </div>
+      )}
+
+      <ResetPasswordModal
+        isOpen={passwordRecoveryOpen}
+        onClose={() => setPasswordRecoveryOpen(false)}
+        onSuccess={() => {
+          refreshAuthSession();
+        }}
+      />
+    </>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AppProvider>
+      <BrowserRouter>
+        <AppShell />
       </BrowserRouter>
     </AppProvider>
   );

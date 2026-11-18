@@ -11,13 +11,19 @@ import {
   INITIAL_ALERTS, INITIAL_PARTNERS
 } from '../data/mockData';
 import { api } from '../services/api';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 
 interface AppContextType {
   currentUser: UserProfile;
   switchRole: (role: UserProfile['role']) => void;
   isAuthenticated: boolean;
+  authLoading: boolean;
+  passwordRecoveryOpen: boolean;
+  setPasswordRecoveryOpen: (open: boolean) => void;
+  refreshAuthSession: () => Promise<void>;
   login: (role: UserRole) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   isDemoMode: boolean;
   isBackendConnected: boolean;
   promotions: Promotion[];
@@ -115,7 +121,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<UserProfile>(CURRENT_USER);
   const [isDemoMode] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [passwordRecoveryOpen, setPasswordRecoveryOpen] = useState<boolean>(false);
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
 
   const [promotions, setPromotions] = useState<Promotion[]>(() => {
@@ -215,6 +223,123 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     syncWithBackend();
   }, []);
 
+  const applySupabaseSession = async (session: Session | null) => {
+    if (!session?.user) {
+      const demoRole = localStorage.getItem('aston_demo_role') as UserRole | null;
+      if (demoRole) {
+        switchRole(demoRole);
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+      return;
+    }
+
+    const authUser = session.user;
+    const email = (authUser.email || '').toLowerCase();
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+    // 1. Résolution via /api/me (flux Omnistream)
+    try {
+      const res = await fetch(`${apiBase}/me`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.user) {
+          setCurrentUser({
+            id: json.user.id || authUser.id,
+            email: json.user.email || authUser.email || '',
+            firstName: json.user.firstName || 'Utilisateur',
+            lastName: json.user.lastName || 'Aston',
+            role: json.user.role || 'coordinateur',
+            avatarUrl: json.user.avatarUrl || '',
+            phone: json.user.phone || '',
+          });
+          setIsAuthenticated(true);
+          return;
+        }
+      }
+    } catch {
+      // Fallback local si backend hors ligne
+    }
+
+    // 2. Fallback métadonnées Supabase Auth + mapping rôles Aston Campus
+    let role: UserRole = 'coordinateur';
+    if (email.includes('claire') || email.includes('direction')) role = 'direction';
+    else if (email.includes('sarah') || email.includes('assistante')) role = 'assistante_admin';
+
+    const fullName = String(authUser.user_metadata?.full_name || authUser.user_metadata?.name || '').trim();
+    let firstName = fullName.split(/\s+/)[0] || '';
+    let lastName = fullName.split(/\s+/).slice(1).join(' ');
+    if (!firstName) {
+      const local = (email.split('@')[0] || 'Utilisateur').split(/[._-]/);
+      firstName = local[0] ? local[0].charAt(0).toUpperCase() + local[0].slice(1) : 'Samir';
+      lastName = local[1] ? local[1].charAt(0).toUpperCase() + local[1].slice(1) : 'Derardja';
+    }
+
+    setCurrentUser({
+      id: authUser.id,
+      email: authUser.email || '',
+      firstName,
+      lastName,
+      role,
+      avatarUrl: authUser.user_metadata?.avatar_url || '',
+    });
+    setIsAuthenticated(true);
+  };
+
+  const refreshAuthSession = async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      const demoRole = localStorage.getItem('aston_demo_role') as UserRole | null;
+      if (demoRole) {
+        switchRole(demoRole);
+        setIsAuthenticated(true);
+      }
+      setAuthLoading(false);
+      return;
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await applySupabaseSession(session);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Détection lien de récupération mot de passe (?reset_password=true ou #type=recovery)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      if (params.get('reset_password') === 'true' || hashParams.get('type') === 'recovery') {
+        setPasswordRecoveryOpen(true);
+      }
+    } catch {}
+
+    refreshAuthSession();
+
+    if (!isSupabaseConfigured || !supabase) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecoveryOpen(true);
+      }
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('aston_demo_role');
+        setIsAuthenticated(false);
+        return;
+      }
+      if (session) {
+        await applySupabaseSession(session);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const switchRole = (newRole: UserProfile['role']) => {
     let name = 'Samir Derardja';
     if (newRole === 'direction') name = 'Claire Dubois';
@@ -232,11 +357,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const login = (role: UserRole) => {
+    localStorage.setItem('aston_demo_role', role);
     switchRole(role);
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    localStorage.removeItem('aston_demo_role');
+    try {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch {}
     setIsAuthenticated(false);
   };
 
@@ -761,6 +893,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentUser,
       switchRole,
       isAuthenticated,
+      authLoading,
+      passwordRecoveryOpen,
+      setPasswordRecoveryOpen,
+      refreshAuthSession,
       login,
       logout,
       isDemoMode,

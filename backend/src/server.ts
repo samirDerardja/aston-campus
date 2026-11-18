@@ -884,6 +884,193 @@ server.post('/api/nevea/preview-csv', async () => {
   };
 });
 
+// --- AUTHENTIFICATION & SESSIONS (FLUX OMNISTREAM + IDENTIFIANTS ASTON CAMPUS) ---
+function extractBearerToken(request: FastifyRequest): string | null {
+  const authHeader = String(request.headers.authorization || '').trim();
+  const match = /^Bearer\s+(.+)$/i.exec(authHeader);
+  if (match && match[1]) {
+    const token = match[1].trim();
+    if (token && token !== 'null' && token !== 'undefined') return token;
+  }
+  return null;
+}
+
+function resolveAstonRoleFromEmail(email?: string | null): 'coordinateur' | 'direction' | 'assistante_admin' {
+  const lower = (email || '').toLowerCase().trim();
+  if (lower.includes('claire') || lower.includes('direction') || lower.includes('responsable')) return 'direction';
+  if (lower.includes('sarah') || lower.includes('assistante') || lower.includes('admin')) return 'assistante_admin';
+  return 'coordinateur';
+}
+
+server.get('/api/me', async (request, reply) => {
+  try {
+    const token = extractBearerToken(request);
+    if (!token || !supabase) {
+      return reply.send({ success: true, user: null });
+    }
+
+    const { data: userData, error } = await supabase.auth.getUser(token);
+    if (error || !userData?.user) {
+      return reply.send({ success: true, user: null });
+    }
+
+    const authUser = userData.user;
+    const email = (authUser.email || '').toLowerCase().trim();
+    let role: string = resolveAstonRoleFromEmail(email);
+    let firstName = '';
+    let lastName = '';
+
+    // Vérification dans les tables Supabase `profiles` + `user_roles`
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, phone, avatar_url')
+        .ilike('email', email)
+        .maybeSingle();
+
+      if (profile) {
+        firstName = profile.first_name || '';
+        lastName = profile.last_name || '';
+        const { data: userRoleRow } = await supabase
+          .from('user_roles')
+          .select('roles(code)')
+          .eq('user_id', profile.id)
+          .maybeSingle();
+        const dbRole = (userRoleRow as any)?.roles?.code;
+        if (dbRole) role = dbRole;
+      }
+    } catch {
+      // Fallback sur les métadonnées Supabase Auth
+    }
+
+    if (!firstName) {
+      const fullName = String(authUser.user_metadata?.full_name || authUser.user_metadata?.name || '').trim();
+      if (fullName) {
+        const parts = fullName.split(/\s+/);
+        firstName = parts[0] || '';
+        lastName = parts.slice(1).join(' ');
+      } else {
+        const localPart = email.split('@')[0] || 'Utilisateur';
+        const parts = localPart.split(/[._-]/);
+        firstName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : 'Utilisateur';
+        lastName = parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : 'Aston';
+      }
+    }
+
+    return reply.send({
+      success: true,
+      user: {
+        id: authUser.id,
+        email: authUser.email || '',
+        firstName,
+        lastName,
+        role,
+        avatarUrl: authUser.user_metadata?.avatar_url || '',
+        phone: authUser.phone || '',
+      },
+    });
+  } catch {
+    return reply.status(500).send({ success: false, error: 'Impossible de charger la session.' });
+  }
+});
+
+server.post('/api/auth/check-availability', async (request, reply) => {
+  try {
+    const body = (request.body as any) || {};
+    const rawEmail = String(body.email || '').trim();
+    const rawUsername = String(body.username || '').trim();
+    const currentUserId = String(body.currentUserId || '').trim();
+
+    if (rawEmail) {
+      const email = rawEmail.toLowerCase();
+      const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+      if (!emailRegex.test(email) || email.length > 255) {
+        return reply.status(400).send({ available: false, field: 'email', error: "Format d'adresse email invalide." });
+      }
+
+      if (supabase) {
+        const { data: profileWithEmail } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .ilike('email', email)
+          .maybeSingle();
+
+        if (profileWithEmail && profileWithEmail.id !== currentUserId) {
+          return reply.send({
+            available: false,
+            field: 'email',
+            error: "Un compte existe déjà avec cette adresse email. Choisissez l'onglet Connexion.",
+          });
+        }
+
+        try {
+          const { data: usersList } = await supabase.auth.admin.listUsers();
+          const matchUser = usersList?.users?.find((u) => u.email?.toLowerCase() === email && u.id !== currentUserId);
+          if (matchUser) {
+            return reply.send({
+              available: false,
+              field: 'email',
+              error: "Un compte existe déjà avec cette adresse email. Choisissez l'onglet Connexion.",
+            });
+          }
+        } catch {}
+      }
+    }
+
+    if (rawUsername) {
+      if (rawUsername.length < 2) {
+        return reply.status(400).send({
+          available: false,
+          field: 'username',
+          error: 'Le nom complet doit comporter au moins 2 caractères.',
+        });
+      }
+      if (rawUsername.length > 50 || /[\x00-\x1F\x7F]/.test(rawUsername)) {
+        return reply.status(400).send({
+          available: false,
+          field: 'username',
+          error: "Le nom d'utilisateur ne doit pas dépasser 50 caractères ni comporter de caractères de contrôle.",
+        });
+      }
+    }
+
+    return reply.send({ available: true, success: true, message: 'Identifiants disponibles.' });
+  } catch {
+    return reply.status(500).send({ available: false, error: 'Erreur lors de la vérification de disponibilité.' });
+  }
+});
+
+server.post('/api/auth/request-password-reset', async (request, reply) => {
+  try {
+    const body = (request.body as any) || {};
+    const email = String(body.email || '').trim();
+    if (!email || !email.includes('@')) {
+      return reply.status(400).send({ success: false, error: 'Adresse email invalide.' });
+    }
+    if (!supabase) {
+      return reply.status(503).send({ success: false, error: 'Supabase non configuré côté serveur.' });
+    }
+
+    const origin = request.headers.origin || 'http://localhost:5173';
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: { redirectTo: `${origin}/?reset_password=true` },
+    });
+
+    if (error) {
+      return reply.status(400).send({ success: false, error: error.message });
+    }
+
+    return reply.send({
+      success: true,
+      recoveryUrl: data?.properties?.action_link || null,
+    });
+  } catch {
+    return reply.status(500).send({ success: false, error: 'Erreur lors de la génération du lien de récupération.' });
+  }
+});
+
 // Démarrage du serveur si exécuté directement
 const PORT = Number(process.env.PORT) || 3001;
 
