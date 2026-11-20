@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { ChevronLeft, ChevronRight, CheckCircle2, Lock, Calendar, Clock, MapPin, X, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, Lock, Calendar, Clock, MapPin, X, Plus, Trash2, Download, AlertTriangle } from 'lucide-react';
 
 interface EventDetail {
   id?: string;
@@ -15,8 +15,54 @@ interface EventDetail {
 export const PlanningPage: React.FC = () => {
   const { events, promotions, addEvent, deleteEvent } = useApp();
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [selectedPromoFilter, setSelectedPromoFilter] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const filteredEvents = useMemo(() => {
+    return selectedPromoFilter === 'all'
+      ? events
+      : events.filter(e => e.promotionId === selectedPromoFilter);
+  }, [events, selectedPromoFilter]);
+
+  // Détection automatique de conflits de salle ou de formateur
+  const conflictEventIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (let i = 0; i < events.length; i++) {
+      for (let j = i + 1; j < events.length; j++) {
+        const a = events[i];
+        const b = events[j];
+        const startA = new Date(a.startTime).getTime();
+        const endA = new Date(a.endTime).getTime();
+        const startB = new Date(b.startTime).getTime();
+        const endB = new Date(b.endTime).getTime();
+        const overlaps = startA < endB && startB < endA;
+        if (!overlaps) continue;
+        const sameRoom = a.room && b.room && a.room.trim().toLowerCase() === b.room.trim().toLowerCase();
+        const sameTrainer = a.trainerName && b.trainerName && a.trainerName.trim().toLowerCase() === b.trainerName.trim().toLowerCase();
+        if (sameRoom || sameTrainer) {
+          ids.add(a.id);
+          ids.add(b.id);
+        }
+      }
+    }
+    return ids;
+  }, [events]);
+
+  const handleExportPlanningCSV = () => {
+    const headers = "Titre,Promotion,Salle,Intervenant,Debut,Fin,Source\n";
+    const rows = filteredEvents.map(ev =>
+      `"${ev.title}","${ev.promotionName}","${ev.room || ''}","${ev.trainerName || ''}","${ev.startTime}","${ev.endTime}","${ev.sourceType}"`
+    ).join("\n");
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `planning_aston_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const [formData, setFormData] = useState({
     title: '',
@@ -357,20 +403,50 @@ export const PlanningPage: React.FC = () => {
 
       {/* Événements consolidés (Nevea lecture seule & Aston Local CRUD) */}
       <div className="glass-card rounded-3xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h2 className="text-sm font-extrabold text-slate-900">Événements & Créneaux enregistrés ({events.length})</h2>
+            <div className="flex items-center space-x-2">
+              <h2 className="text-sm font-extrabold text-slate-900">Événements & Créneaux enregistrés ({filteredEvents.length})</h2>
+              {conflictEventIds.size > 0 && (
+                <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>{conflictEventIds.size} conflit(s) détecté(s)</span>
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-slate-500">
               Les événements locaux Aston Campus peuvent être ajoutés et supprimés ; les cours Nevea restent protégés en lecture seule.
             </p>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <select
+              value={selectedPromoFilter}
+              onChange={(e) => setSelectedPromoFilter(e.target.value)}
+              className="bg-white/80 text-xs text-slate-700 font-semibold px-3 py-2 rounded-xl border border-slate-200 outline-none cursor-pointer"
+            >
+              <option value="all">Toutes les promotions</option>
+              {promotions.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={handleExportPlanningCSV}
+              className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-white/80 hover:bg-white border border-slate-200 text-xs font-bold text-slate-700 transition"
+            >
+              <Download className="w-3.5 h-3.5 text-[#00D084]" />
+              <span>Exporter CSV</span>
+            </button>
+          </div>
         </div>
 
-        {events.length === 0 ? (
+        {filteredEvents.length === 0 ? (
           <p className="text-xs text-slate-400 italic py-4 text-center">Aucun événement enregistré.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {events.map((ev) => {
+            {filteredEvents.map((ev) => {
+              const isConflict = conflictEventIds.has(ev.id);
               const isNevea = ev.sourceType === 'nevea_readonly' || ev.isReadonly;
               const promo = promotions.find(p => p.id === ev.promotionId);
               const startStr = new Date(ev.startTime).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
@@ -403,6 +479,9 @@ export const PlanningPage: React.FC = () => {
                         {isNevea ? 'Nevea' : 'Aston Local'}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">{startStr} {startTimeStr}</span>
+                      {isConflict && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800">Conflit</span>
+                      )}
                     </div>
                     <h4 className="text-xs font-bold text-slate-900 truncate">{ev.title}</h4>
                     <p className="text-[11px] text-slate-500 truncate">

@@ -14,46 +14,90 @@ import { StudentAlert } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { alerts, partners, convertAlertToAction, dismissAlert, currentUser } = useApp();
+  const {
+    alerts,
+    promotions,
+    students,
+    trainers,
+    actions,
+    interviews,
+    meetings,
+    events,
+    convertAlertToAction,
+    dismissAlert,
+    currentUser
+  } = useApp();
 
   const [alertFilter, setAlertFilter] = useState<'all' | 'absences' | 'retards' | 'helpline' | 'xefi'>('all');
   const [contactModalAlert, setContactModalAlert] = useState<StudentAlert | null>(null);
   const [processingAlertId, setProcessingAlertId] = useState<string | null>(null);
 
-  // Donut chart data: 28 actions au total (luxury color palette: Emerald, Dark Slate, Rose, Pearl)
+  // Calculs dynamiques à partir des données réelles disponibles
+  const activePromotionsCount = promotions.filter(p => p.status === 'active').length;
+  const totalStudentsCount = promotions.reduce((acc, p) => acc + (p.studentsCount || 0), 0) || students.length;
+  const leadTrainersCount = trainers.filter(t => t.isLead).length || 3;
+  const otherTrainersCount = Math.max(0, trainers.length - leadTrainersCount);
+
+  const now = new Date();
+  const inProgressCount = actions.filter(a => a.status === 'in_progress').length;
+  const todoCount = actions.filter(a => a.status === 'todo' || a.status === 'waiting').length;
+  const overdueCount = actions.filter(
+    a => a.status !== 'completed' && a.status !== 'cancelled' && new Date(a.dueDate) < now
+  ).length;
+  const completedCount = actions.filter(a => a.status === 'completed').length;
+  const totalActionsCount = actions.length;
+
   const actionStatusData = [
-    { name: 'En cours', value: 14, color: '#0F172A' },
-    { name: 'À faire', value: 7, color: '#00D084' },
-    { name: 'En retard', value: 7, color: '#F43F5E' },
-    { name: 'Clôturées', value: 0, color: '#CBD5E1' },
+    { name: 'En cours', value: inProgressCount, color: '#0F172A' },
+    { name: 'À faire', value: todoCount, color: '#00D084' },
+    { name: 'En retard', value: overdueCount, color: '#F43F5E' },
+    { name: 'Clôturées', value: completedCount, color: '#CBD5E1' },
   ];
 
-  const appointments = [
-    {
-      id: 'apt-1',
-      title: 'Synchronisation Dev Web',
-      time: 'Demain • 14:00',
-      type: 'sync',
-      badge: 'Réunion d\'équipe',
+  // Prochains rendez-vous calculés depuis les entretiens, réunions et événements
+  const upcomingItems = [
+    ...meetings.map(m => ({
+      id: m.id,
+      title: m.title,
+      date: new Date(m.scheduledAt),
+      badge: 'Réunion pédagogique',
       color: 'bg-slate-900/5 text-slate-800 border-slate-200/80',
-    },
-    {
-      id: 'apt-2',
-      title: 'Entretien individuel (Thomas Dubois)',
-      time: '13 nov. • 10:00',
-      type: 'interview',
-      badge: 'Point pédagogique',
-      color: 'bg-emerald-500/10 text-emerald-800 border-emerald-500/20',
-    },
-    {
-      id: 'apt-3',
-      title: 'Réunion pédagogique formateurs',
-      time: '14 nov. • 09:30',
-      type: 'meeting',
-      badge: 'Conseil pédagogique',
+    })),
+    ...interviews
+      .filter(i => i.status === 'scheduled' || i.status === 'postponed')
+      .map(i => ({
+        id: i.id,
+        title: `${i.title}${i.studentName ? ` (${i.studentName})` : ''}`,
+        date: new Date(i.scheduledAt),
+        badge: 'Entretien',
+        color: 'bg-emerald-500/10 text-emerald-800 border-emerald-500/20',
+      })),
+    ...events.slice(0, 3).map(e => ({
+      id: e.id,
+      title: e.title,
+      date: new Date(e.startTime),
+      badge: e.sourceType === 'nevea_readonly' ? 'Séance Nevea' : 'Événement campus',
       color: 'bg-indigo-500/10 text-indigo-800 border-indigo-500/20',
-    },
-  ];
+    })),
+  ]
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .slice(0, 3)
+    .map(item => ({
+      id: item.id,
+      title: item.title,
+      time: `${item.date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })} • ${item.date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+      badge: item.badge,
+      color: item.color,
+    }));
+
+  const appointments = upcomingItems;
+
+  const todayFormatted = new Date().toLocaleDateString('fr-FR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 
   // Filtrage des alertes
   const filteredAlerts = alerts.filter(a => {
@@ -143,7 +187,7 @@ export const DashboardPage: React.FC = () => {
 
           <div className="inline-flex items-center space-x-2 bg-white/70 backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/80 shadow-[0_4px_16px_rgba(0,0,0,0.03)] text-xs font-semibold text-slate-700">
             <Calendar className="w-3.5 h-3.5 text-[#00D084]" />
-            <span>Mer. 11 nov. 2026</span>
+            <span>{todayFormatted}</span>
           </div>
         </div>
       </div>
@@ -163,9 +207,9 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div className="mt-4">
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-              9
+              {activePromotionsCount}
             </span>
-            <p className="text-[11px] text-slate-400 mt-1">Cohortes (Helpline 40/42/43, XEFI, TSRS...)</p>
+            <p className="text-[11px] text-slate-400 mt-1">Cohortes actives ({promotions.length} au total)</p>
           </div>
         </div>
 
@@ -182,7 +226,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div className="mt-4 flex items-baseline space-x-2">
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-              159
+              {totalStudentsCount}
             </span>
             <span className="text-xs font-bold text-emerald-700 bg-[#00D084]/15 border border-[#00D084]/30 px-2 py-0.5 rounded-full font-mono backdrop-blur-xs">
               1 sem./3 sem.
@@ -204,10 +248,10 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div className="mt-4 flex items-baseline space-x-2">
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-              3
+              {leadTrainersCount}
             </span>
             <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full font-mono">
-              +15 form.
+              +{otherTrainersCount} form.
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-1">Mourad (Helpline), Christelle, Mehdi</p>
@@ -496,9 +540,9 @@ export const DashboardPage: React.FC = () => {
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Centre du Donut : "28 Actions" */}
+            {/* Centre du Donut */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-black text-slate-900 font-mono">28</span>
+              <span className="text-2xl font-black text-slate-900 font-mono">{totalActionsCount}</span>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Actions</span>
             </div>
           </div>
@@ -561,7 +605,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between text-xs text-slate-500">
-            <span>3 rendez-vous prévus cette semaine</span>
+            <span>{appointments.length} rendez-vous à suivre</span>
             <button 
               onClick={() => navigate('/synchronisations')}
               className="text-[#0F172A] font-bold hover:text-[#00D084] transition"

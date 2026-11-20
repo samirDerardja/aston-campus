@@ -1,20 +1,73 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { 
-  ChevronRight, Mail, Phone, MessageSquare, Check, 
-  Clock, AlertCircle, Calendar, ShieldCheck 
+import {
+  ChevronRight, Mail, Phone, MessageSquare, Check,
+  Building2, Plus, X
 } from 'lucide-react';
 
 export const StudentDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { students, actions, interviews } = useApp();
+  const { students, actions, interviews, documents, alerts, trainers, addInterview, addAction } = useApp();
 
   const [activeTab, setActiveTab] = useState<'summary' | 'interviews' | 'actions' | 'documents' | 'history'>('summary');
+  const [isInterviewOpen, setIsInterviewOpen] = useState(false);
+  const [isActionOpen, setIsActionOpen] = useState(false);
 
-  const student = students.find(s => s.id === id || s.firstName === 'Thomas') || students[0];
-  const studentActions = actions.filter(a => a.studentId === student.id || a.title.includes('SQL'));
+  const [interviewTitle, setInterviewTitle] = useState("Point d'étape individuel");
+  const [interviewDate, setInterviewDate] = useState(new Date().toISOString().slice(0, 16));
+  const [actionTitle, setActionTitle] = useState('');
+  const [actionPriority, setActionPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('high');
+
+  const student = students.find(s => s.id === id) || students[0];
+  if (!student) {
+    return (
+      <div className="glass-card p-8 rounded-3xl text-center text-xs text-slate-500">
+        Aucun apprenant trouvé.
+      </div>
+    );
+  }
+
+  const studentActions = actions.filter(a => a.studentId === student.id);
+  const openStudentActions = studentActions.filter(a => a.status !== 'completed' && a.status !== 'cancelled');
+  const studentInterviews = interviews.filter(i => i.studentId === student.id);
+  const studentDocs = documents.filter(d => d.studentId === student.id || d.promotionId === student.promotionId);
+  const studentAlerts = alerts.filter(a => a.studentId === student.id);
+
+  const handleCreateInterview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!interviewTitle.trim()) return;
+    addInterview({
+      title: interviewTitle.trim(),
+      type: 'apprenant_individuel',
+      scheduledAt: new Date(interviewDate).toISOString(),
+      promotionId: student.promotionId,
+      studentId: student.id,
+      location: 'Bureau Coordination B201',
+    });
+    setIsInterviewOpen(false);
+    setActiveTab('interviews');
+  };
+
+  const handleCreateAction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!actionTitle.trim()) return;
+    addAction({
+      title: actionTitle.trim(),
+      description: `Action de suivi pour ${student.firstName} ${student.lastName}`,
+      promotionId: student.promotionId,
+      studentId: student.id,
+      assigneeId: trainers[0]?.id || 'usr-samir-01',
+      priority: actionPriority,
+      dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+    });
+    setActionTitle('');
+    setIsActionOpen(false);
+    setActiveTab('actions');
+  };
+
+  const attendancePct = Math.min(100, Math.max(0, student.attendanceRate ?? 92));
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto font-sans">
@@ -45,7 +98,9 @@ export const StudentDetailPage: React.FC = () => {
                 Actif
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5 font-semibold">Promotion Développeur Web - 2025</p>
+            <p className="text-xs text-slate-500 mt-0.5 font-semibold">
+              {student.promotionName} • {student.companyName} ({student.companyTutor})
+            </p>
 
             <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-slate-500">
               <span className="flex items-center space-x-1.5">
@@ -56,11 +111,29 @@ export const StudentDetailPage: React.FC = () => {
                 <Phone className="w-3.5 h-3.5 text-slate-400" />
                 <span>{student.phone}</span>
               </span>
+              <span className="flex items-center space-x-1.5">
+                <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                <span>{student.companyName}</span>
+              </span>
             </div>
           </div>
         </div>
 
-        <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsInterviewOpen(true)}
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-white/80 hover:bg-white border border-slate-200 text-slate-800 text-xs font-bold transition shadow-2xs"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#00D084]" />
+            <span>Entretien</span>
+          </button>
+          <button
+            onClick={() => setIsActionOpen(true)}
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-white/80 hover:bg-white border border-slate-200 text-slate-800 text-xs font-bold transition shadow-2xs"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#00D084]" />
+            <span>Action</span>
+          </button>
           <a 
             href={`mailto:${student.email}?subject=Aston%20Campus%20-%20Suivi%20pédagogique`}
             className="flex items-center space-x-2 px-5 py-2.5 rounded-2xl bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold transition shadow-[0_4px_14px_rgba(15,23,42,0.18)]"
@@ -175,7 +248,7 @@ export const StudentDetailPage: React.FC = () => {
                       />
                       <path
                         className="text-[#00D084]"
-                        strokeDasharray="92, 100"
+                        strokeDasharray={`${attendancePct}, 100`}
                         strokeWidth="3.5"
                         strokeLinecap="round"
                         stroke="currentColor"
@@ -184,7 +257,7 @@ export const StudentDetailPage: React.FC = () => {
                       />
                     </svg>
                     <div className="absolute flex flex-col items-center justify-center">
-                      <span className="text-base font-black text-slate-900 font-mono">92 %</span>
+                      <span className="text-base font-black text-slate-900 font-mono">{attendancePct} %</span>
                     </div>
                   </div>
                   <span className="text-[11px] text-slate-500 font-bold mt-2">Assiduité</span>
@@ -220,27 +293,191 @@ export const StudentDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Actions en cours (1) */}
+            {/* Actions en cours */}
             <div className="glass-card p-6 rounded-3xl">
-              <h2 className="text-sm font-bold text-slate-900 mb-3">Actions en cours (1)</h2>
+              <h2 className="text-sm font-bold text-slate-900 mb-3">Actions en cours ({openStudentActions.length})</h2>
 
-              <div 
-                onClick={() => navigate('/actions')}
-                className="p-4 rounded-2xl border border-white/90 bg-white/60 hover:bg-white/80 transition cursor-pointer flex items-center justify-between shadow-2xs backdrop-blur-md"
-              >
-                <div className="flex items-start space-x-3">
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Renforcement en SQL</h4>
-                    <p className="text-[11px] text-slate-500 font-mono">Échéance : 20 nov. 2025</p>
-                  </div>
+              {openStudentActions.length === 0 ? (
+                <p className="text-xs text-slate-400">Aucune action ouverte pour cet apprenant.</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {openStudentActions.map(a => (
+                    <div
+                      key={a.id}
+                      onClick={() => navigate('/actions')}
+                      className="p-4 rounded-2xl border border-white/90 bg-white/60 hover:bg-white/80 transition cursor-pointer flex items-center justify-between shadow-2xs backdrop-blur-md"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">{a.title}</h4>
+                          <p className="text-[11px] text-slate-500 font-mono">Échéance : {a.dueDate}</p>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#00D084]/15 text-emerald-800 border border-[#00D084]/30 font-mono">
+                        {a.status}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-
-                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#00D084]/15 text-emerald-800 border border-[#00D084]/30 font-mono">
-                  En cours
-                </span>
-              </div>
+              )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'interviews' && (
+        <div className="glass-card rounded-3xl p-6 space-y-3">
+          {studentInterviews.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-4">Aucun entretien enregistré pour cet apprenant.</p>
+          ) : (
+            studentInterviews.map(i => (
+              <div key={i.id} onClick={() => navigate('/entretiens')} className="p-4 rounded-2xl bg-white/70 border border-white/90 flex items-center justify-between cursor-pointer hover:bg-white transition">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">{i.title}</h4>
+                  <p className="text-[11px] text-slate-500">{new Date(i.scheduledAt).toLocaleDateString('fr-FR')} • {i.location}</p>
+                </div>
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-mono">{i.status}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {activeTab === 'actions' && (
+        <div className="glass-card rounded-3xl p-6 space-y-3">
+          {studentActions.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-4">Aucune action corrective associée.</p>
+          ) : (
+            studentActions.map(a => (
+              <div key={a.id} onClick={() => navigate('/actions')} className="p-4 rounded-2xl bg-white/70 border border-white/90 flex items-center justify-between cursor-pointer hover:bg-white transition">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">{a.title}</h4>
+                  <p className="text-[11px] text-slate-500">Responsable : {a.assigneeName} • Échéance : {a.dueDate}</p>
+                </div>
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-mono">{a.status}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {activeTab === 'documents' && (
+        <div className="glass-card rounded-3xl p-6 space-y-3">
+          {studentDocs.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-4">Aucun document rattaché.</p>
+          ) : (
+            studentDocs.map(d => (
+              <div key={d.id} onClick={() => navigate('/documents')} className="p-4 rounded-2xl bg-white/70 border border-white/90 flex items-center justify-between cursor-pointer hover:bg-white transition">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">{d.title}</h4>
+                  <p className="text-[11px] text-slate-500 font-mono">{d.fileName}</p>
+                </div>
+                <span className="text-[11px] text-slate-400">{new Date(d.uploadedAt).toLocaleDateString('fr-FR')}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <div className="glass-card rounded-3xl p-6 space-y-3">
+          {studentAlerts.length === 0 && studentInterviews.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-4">Aucun événement d'historique enregistré.</p>
+          ) : (
+            studentAlerts.map(al => (
+              <div key={al.id} className="p-4 rounded-2xl bg-white/70 border border-white/90 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">{al.title}</h4>
+                  <p className="text-[11px] text-slate-500">{al.description}</p>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">{new Date(al.triggeredAt).toLocaleDateString('fr-FR')}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Modal Planifier Entretien */}
+      {isInterviewOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">Planifier un entretien — {student.firstName} {student.lastName}</h2>
+              <button onClick={() => setIsInterviewOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateInterview} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Motif *</label>
+                <input
+                  type="text"
+                  required
+                  value={interviewTitle}
+                  onChange={(e) => setInterviewTitle(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Date et heure</label>
+                <input
+                  type="datetime-local"
+                  value={interviewDate}
+                  onChange={(e) => setInterviewDate(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
+                />
+              </div>
+              <div className="pt-2 flex justify-end space-x-2">
+                <button type="button" onClick={() => setIsInterviewOpen(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600">Annuler</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-[#0F172A] text-white font-bold">Planifier</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Créer Action Corrective */}
+      {isActionOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">Action corrective — {student.firstName} {student.lastName}</h2>
+              <button onClick={() => setIsActionOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateAction} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Intitulé de l'action *</label>
+                <input
+                  type="text"
+                  required
+                  value={actionTitle}
+                  onChange={(e) => setActionTitle(e.target.value)}
+                  placeholder="Ex: Point assiduité avec le tuteur entreprise"
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Priorité</label>
+                <select
+                  value={actionPriority}
+                  onChange={(e) => setActionPriority(e.target.value as any)}
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-slate-800"
+                >
+                  <option value="low">Basse</option>
+                  <option value="medium">Moyenne</option>
+                  <option value="high">Haute</option>
+                  <option value="urgent">Urgente</option>
+                </select>
+              </div>
+              <div className="pt-2 flex justify-end space-x-2">
+                <button type="button" onClick={() => setIsActionOpen(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600">Annuler</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-[#0F172A] text-white font-bold">Créer l'action</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

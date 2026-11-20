@@ -10,27 +10,59 @@ import {
 
 export const ReportingPage: React.FC = () => {
   const { actions, interviews, promotions, students } = useApp();
-  const [timeFilter, setTimeFilter] = useState<'semestre1' | 'semestre2' | 'annee'>('semestre1');
+  const [selectedPromo, setSelectedPromo] = useState<string>('all');
 
-  // Indicateurs globaux
-  const completedActions = actions.filter(a => a.status === 'completed').length || 12;
-  const inProgressActions = actions.filter(a => a.status === 'in_progress').length || 14;
-  const overdueActions = 7;
-  const totalActions = 28;
-  const resolutionRate = Math.round((completedActions / totalActions) * 100);
+  const filteredActions = selectedPromo === 'all'
+    ? actions
+    : actions.filter(a => a.promotionId === selectedPromo);
 
-  // Données par promotion
-  const promoStats = [
-    { name: 'DW2025', actionsTotal: 12, actionsDone: 7, assiduite: 92 },
-    { name: 'CDA2026', actionsTotal: 6, actionsDone: 4, assiduite: 94 },
-    { name: 'SIO2025', actionsTotal: 4, actionsDone: 3, assiduite: 88 },
-    { name: 'CYB2026', actionsTotal: 3, actionsDone: 2, assiduite: 91 },
-    { name: 'DSO2026', actionsTotal: 3, actionsDone: 2, assiduite: 96 },
-  ];
+  const filteredInterviews = selectedPromo === 'all'
+    ? interviews
+    : interviews.filter(i => i.promotionId === selectedPromo);
+
+  const filteredStudents = selectedPromo === 'all'
+    ? students
+    : students.filter(s => s.promotionId === selectedPromo);
+
+  // Indicateurs globaux calculés dynamiquement
+  const now = new Date();
+  const completedActions = filteredActions.filter(a => a.status === 'completed').length;
+  const overdueActions = filteredActions.filter(
+    a => a.status !== 'completed' && a.status !== 'cancelled' && new Date(a.dueDate) < now
+  ).length;
+  const totalActions = filteredActions.length;
+  const resolutionRate = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : null;
+
+  const realizedInterviews = filteredInterviews.filter(i => i.status === 'completed').length;
+  const totalInterviews = filteredInterviews.length;
+
+  const avgAttendance = filteredStudents.length > 0
+    ? Math.round(filteredStudents.reduce((acc, s) => acc + (s.attendanceRate || 0), 0) / filteredStudents.length)
+    : null;
+
+  // Données par promotion calculées depuis le contexte
+  const targetPromotions = selectedPromo === 'all'
+    ? promotions
+    : promotions.filter(p => p.id === selectedPromo);
+
+  const promoStats = targetPromotions.map(p => {
+    const pActions = actions.filter(a => a.promotionId === p.id);
+    const pDone = pActions.filter(a => a.status === 'completed').length;
+    const pStudents = students.filter(s => s.promotionId === p.id);
+    const pAttendance = pStudents.length > 0
+      ? Math.round(pStudents.reduce((acc, s) => acc + (s.attendanceRate || 0), 0) / pStudents.length)
+      : 0;
+    return {
+      name: p.code || p.name,
+      actionsTotal: pActions.length,
+      actionsDone: pDone,
+      assiduite: pAttendance,
+    };
+  });
 
   const handleExportCSV = () => {
     const headers = "Identifiant,Titre,Promotion,Responsable,Priorite,Statut,Echeance\n";
-    const rows = actions.map(a => 
+    const rows = filteredActions.map(a => 
       `"${a.id}","${a.title}","${a.promotionName}","${a.assigneeName}","${a.priority}","${a.status}","${a.dueDate}"`
     ).join("\n");
     
@@ -57,13 +89,26 @@ export const ReportingPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className="inline-flex items-center space-x-2 bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-extrabold px-5 py-2.5 rounded-2xl shadow-[0_4px_16px_rgba(15,23,42,0.2)] transition-all hover:scale-102"
-        >
-          <Download className="w-3.5 h-3.5 text-[#00D084]" />
-          <span>Exporter le rapport CSV</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={selectedPromo}
+            onChange={(e) => setSelectedPromo(e.target.value)}
+            className="bg-white/80 text-xs text-slate-700 font-semibold px-4 py-2.5 rounded-2xl border border-white/90 shadow-2xs outline-none cursor-pointer"
+          >
+            <option value="all">Toutes les promotions ({promotions.length})</option>
+            {promotions.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+
+          <button
+            onClick={handleExportCSV}
+            className="inline-flex items-center space-x-2 bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-extrabold px-5 py-2.5 rounded-2xl shadow-[0_4px_16px_rgba(15,23,42,0.2)] transition-all hover:scale-102"
+          >
+            <Download className="w-3.5 h-3.5 text-[#00D084]" />
+            <span>Exporter le rapport CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* 4 Cartes KPI en verre translucide de luxe */}
@@ -76,8 +121,14 @@ export const ReportingPage: React.FC = () => {
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-3xl font-extrabold text-slate-900 font-mono">{resolutionRate}%</span>
-            <p className="text-[11px] text-emerald-600 font-bold mt-1">12 actions résolues sur 28</p>
+            <span className="text-3xl font-extrabold text-slate-900 font-mono">
+              {resolutionRate !== null ? `${resolutionRate}%` : '—'}
+            </span>
+            <p className="text-[11px] text-emerald-600 font-bold mt-1">
+              {totalActions > 0
+                ? `${completedActions} actions résolues sur ${totalActions}`
+                : 'Données insuffisantes'}
+            </p>
           </div>
         </div>
 
@@ -89,8 +140,12 @@ export const ReportingPage: React.FC = () => {
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-3xl font-extrabold text-slate-900 font-mono">24</span>
-            <p className="text-[11px] text-slate-400 mt-1">Points individuels & tuteurs</p>
+            <span className="text-3xl font-extrabold text-slate-900 font-mono">{realizedInterviews}</span>
+            <p className="text-[11px] text-slate-400 mt-1">
+              {totalInterviews > 0
+                ? `Sur ${totalInterviews} entretiens planifiés`
+                : 'Données insuffisantes'}
+            </p>
           </div>
         </div>
 
@@ -102,8 +157,14 @@ export const ReportingPage: React.FC = () => {
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-3xl font-extrabold text-emerald-600 font-mono">92%</span>
-            <p className="text-[11px] text-slate-400 mt-1">Conforme référentiel Qualiopi</p>
+            <span className="text-3xl font-extrabold text-emerald-600 font-mono">
+              {avgAttendance !== null ? `${avgAttendance}%` : '—'}
+            </span>
+            <p className="text-[11px] text-slate-400 mt-1">
+              {avgAttendance !== null
+                ? `Calculé sur ${filteredStudents.length} apprenant(s)`
+                : 'Données insuffisantes'}
+            </p>
           </div>
         </div>
 
