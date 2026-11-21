@@ -461,6 +461,40 @@ class ApiService {
       return false;
     }
   }
+
+  // --- FEEDBACKS TERRAIN ---
+  async getFeedbacks(): Promise<any[] | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/feedbacks`, { signal: AbortSignal.timeout(2000) });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async createFeedback(data: any): Promise<any | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/feedbacks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteFeedback(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/feedbacks/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export const api = new ApiService();

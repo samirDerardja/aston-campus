@@ -7,13 +7,15 @@ import {
   Plus, Pencil, Trash2, X
 } from 'lucide-react';
 import { Student } from '../types';
+import { computeStudentRisk } from '../utils/riskScore';
 
 export const StudentsPage: React.FC = () => {
-  const { students, promotions, addStudent, updateStudent, deleteStudent } = useApp();
+  const { students, promotions, alerts, feedbacks, addStudent, updateStudent, deleteStudent } = useApp();
   const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
   const [selectedPromo, setSelectedPromo] = useState('all');
+  const [onlyAtRisk, setOnlyAtRisk] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -91,7 +93,9 @@ export const StudentsPage: React.FC = () => {
       s.companyName.toLowerCase().includes(search.toLowerCase()) ||
       s.email.toLowerCase().includes(search.toLowerCase());
     const matchesPromo = selectedPromo === 'all' || s.promotionId === selectedPromo;
-    return matchesSearch && matchesPromo;
+    const risk = computeStudentRisk(s, alerts, feedbacks);
+    const matchesRisk = !onlyAtRisk || risk.score >= 50;
+    return matchesSearch && matchesPromo && matchesRisk;
   });
 
   const avgAttendance = Math.round(
@@ -181,7 +185,18 @@ export const StudentsPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setOnlyAtRisk(!onlyAtRisk)}
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold border transition ${
+              onlyAtRisk
+                ? 'bg-rose-600 text-white border-rose-600'
+                : 'bg-white/80 text-rose-700 border-rose-200 hover:bg-rose-50'
+            }`}
+          >
+            À risque (≥50)
+          </button>
           <Filter className="w-3.5 h-3.5 text-slate-400" />
           <select
             value={selectedPromo}
@@ -206,12 +221,15 @@ export const StudentsPage: React.FC = () => {
               <th className="py-4 px-5">Entreprise d'accueil</th>
               <th className="py-4 px-5">Tuteur Entreprise</th>
               <th className="py-4 px-5">Assiduité</th>
+              <th className="py-4 px-5">Risque</th>
               <th className="py-4 px-5">Statut</th>
               <th className="py-4 px-5 text-right">Dossier</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/50">
-            {filteredStudents.map((s) => (
+            {filteredStudents.map((s) => {
+              const risk = computeStudentRisk(s, alerts, feedbacks);
+              return (
               <tr 
                 key={s.id}
                 onClick={() => navigate(`/apprenants/${s.id}`)}
@@ -245,6 +263,19 @@ export const StudentsPage: React.FC = () => {
                     {s.attendanceRate}%
                   </span>
                 </td>
+                <td className="py-3.5 px-5 font-mono">
+                  <span className={`text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full border ${
+                    risk.level === 'critique'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : risk.level === 'eleve'
+                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                      : risk.level === 'modere'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}>
+                    {risk.level} ({risk.score})
+                  </span>
+                </td>
                 <td className="py-3.5 px-5">
                   <span className="text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-mono">
                     {s.status}
@@ -273,7 +304,8 @@ export const StudentsPage: React.FC = () => {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

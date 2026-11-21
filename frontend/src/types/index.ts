@@ -280,3 +280,21 @@ export interface AppNotification {
   createdAt: string;
 }
 
+export type FeedbackAuthorRole = 'formateur' | 'tuteur_esn' | 'apprenant' | 'coordinateur';
+export type FeedbackSentiment = 'positive' | 'neutral' | 'negative';
+export type FeedbackCategory = 'assiduite' | 'progression' | 'integration_esn' | 'posture' | 'risque_rupture';
+
+export interface StudentFeedback {
+  id: string;
+  studentId?: string;
+  studentName?: string;
+  promotionId: string;
+  promotionName?: string;
+  authorName: string;
+  authorRole: FeedbackAuthorRole;
+  sentiment: FeedbackSentiment;
+  category: FeedbackCategory;
+  comment: string;
+  createdAt: string;
+}
+

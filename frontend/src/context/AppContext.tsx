@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   UserProfile, UserRole, Promotion, Student, Trainer, CalendarEvent, 
   Interview, Meeting, ActionItem, DocumentItem, AppNotification, ActionStatus, ActionPriority, InterviewType,
-  Cursus, StudentAlert, Partner, AlertStatus
+  Cursus, StudentAlert, Partner, AlertStatus, StudentFeedback
 } from '../types';
 import { 
   CURRENT_USER, INITIAL_PROMOTIONS, INITIAL_STUDENTS, INITIAL_TRAINERS,
@@ -39,6 +39,9 @@ interface AppContextType {
   unreadNotificationsCount: number;
   alerts: StudentAlert[];
   partners: Partner[];
+  feedbacks: StudentFeedback[];
+  addFeedback: (data: Omit<StudentFeedback, 'id' | 'createdAt'>) => Promise<void>;
+  deleteFeedback: (id: string) => Promise<void>;
   
   // Actions Métier
   addInterview: (data: {
@@ -176,6 +179,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [partners, setPartners] = useState<Partner[]>(() => {
     const saved = localStorage.getItem('aston_partners');
     return saved ? JSON.parse(saved) : INITIAL_PARTNERS;
+  });
+
+  const [feedbacks, setFeedbacks] = useState<StudentFeedback[]>(() => {
+    const saved = localStorage.getItem('aston_feedbacks');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 'fb-1',
+        studentId: 'stu-01',
+        studentName: 'Alexandre Martin',
+        promotionId: '33333333-0000-0000-0000-000000000010',
+        promotionName: 'Helpline 40',
+        authorName: 'Mourad (Formateur Référent)',
+        authorRole: 'formateur',
+        sentiment: 'negative',
+        category: 'assiduite',
+        comment: 'Arrivées tardives répétées les lundis matin en semaine école. Bon niveau technique mais manque de ponctualité.',
+        createdAt: '2026-11-10T17:15:00Z',
+      },
+      {
+        id: 'fb-2',
+        studentId: 'stu-03',
+        studentName: 'Sami Belkacem',
+        promotionId: '33333333-0000-0000-0000-000000000011',
+        promotionName: 'Helpline 42',
+        authorName: 'Marc Durand (Tuteur Helpline)',
+        authorRole: 'tuteur_esn',
+        sentiment: 'positive',
+        category: 'integration_esn',
+        comment: "Très bonne intégration sur le plateau Helpdesk N1/N2, autonome sur la prise d'appels.",
+        createdAt: '2026-11-09T11:30:00Z',
+      },
+    ];
   });
 
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -886,6 +922,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await api.deleteEvent(id);
   };
 
+  useEffect(() => {
+    localStorage.setItem('aston_feedbacks', JSON.stringify(feedbacks));
+  }, [feedbacks]);
+
+  const addFeedback = async (data: Omit<StudentFeedback, 'id' | 'createdAt'>) => {
+    const created = await api.createFeedback(data);
+    const promo = promotions.find(p => p.id === data.promotionId);
+    const newFb: StudentFeedback = created || {
+      id: `fb-${Date.now()}`,
+      ...data,
+      promotionName: data.promotionName || promo?.name || 'Promotion Aston',
+      createdAt: new Date().toISOString(),
+    };
+    setFeedbacks(prev => [newFb, ...prev]);
+  };
+
+  const deleteFeedback = async (id: string) => {
+    setFeedbacks(prev => prev.filter(f => f.id !== id));
+    await api.deleteFeedback(id);
+  };
+
   const unreadNotificationsCount = notifications.filter(n => !n.isRead).length;
 
   return (
@@ -914,6 +971,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unreadNotificationsCount,
       alerts,
       partners,
+      feedbacks,
+      addFeedback,
+      deleteFeedback,
       addInterview,
       updateInterviewReport,
       updateActionStatus,

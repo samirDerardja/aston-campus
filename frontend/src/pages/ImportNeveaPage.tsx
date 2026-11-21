@@ -14,11 +14,73 @@ export const ImportNeveaPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'attendance' | 'students'>('attendance');
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [fileName, setFileName] = useState<string>('export_nevea_emargements_semaine_46.csv');
+  const [fileSizeLabel, setFileSizeLabel] = useState<string>('64.2 Ko (exemple)');
+  const [parsedRows, setParsedRows] = useState<any[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [alertsCreatedCount, setAlertsCreatedCount] = useState<number>(4);
 
+  const parseNeveaCsvText = (text: string) => {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) return [];
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
+    const idx = (keys: string[]) => headers.findIndex(h => keys.some(k => h.includes(k)));
+
+    const iDate = idx(['date']);
+    const iStudent = idx(['apprenant', 'etudiant', 'nom']);
+    const iFirst = idx(['prenom']);
+    const iPromo = idx(['promo', 'groupe', 'classe']);
+    const iPartner = idx(['partenaire', 'entreprise', 'esn']);
+    const iStatus = idx(['statut', 'presence', 'type', 'motif']);
+    const iLate = idx(['retard', 'minute', 'duree']);
+
+    return lines.slice(1).map((line) => {
+      const cols = line.split(sep).map(c => c.replace(/^"|"$/g, '').trim());
+      const fullName = iFirst >= 0 && iStudent >= 0 && iFirst !== iStudent
+        ? `${cols[iFirst] || ''} ${cols[iStudent] || ''}`.trim()
+        : (cols[iStudent >= 0 ? iStudent : 0] || 'Apprenant inconnu');
+      const statusRaw = cols[iStatus >= 0 ? iStatus : 2] || 'Présent';
+      const lateMins = iLate >= 0 ? cols[iLate] : '';
+      const lower = statusRaw.toLowerCase();
+
+      let diagnostic = 'Conforme';
+      let badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      if (lower.includes('absent') && (lower.includes('non') || lower.includes('injust'))) {
+        diagnostic = 'Alerte Absence Non Justifiée';
+        badgeColor = 'bg-rose-100 text-rose-800 border-rose-300';
+      } else if (lower.includes('absent')) {
+        diagnostic = 'Absence à vérifier';
+        badgeColor = 'bg-orange-100 text-orange-800 border-orange-300';
+      } else if (lower.includes('retard') || (lateMins && Number(lateMins) > 0)) {
+        diagnostic = `Retard signalé (${lateMins || statusRaw})`;
+        badgeColor = 'bg-amber-100 text-amber-800 border-amber-300';
+      }
+
+      return {
+        date: (iDate >= 0 ? cols[iDate] : '') || new Date().toLocaleDateString('fr-FR'),
+        etudiant: fullName,
+        promo: (iPromo >= 0 ? cols[iPromo] : '') || 'Promotion Aston',
+        partenaire: (iPartner >= 0 ? cols[iPartner] : '') || 'Partenaire',
+        type: lateMins && !lower.includes('retard') ? `${statusRaw} (${lateMins} min)` : statusRaw,
+        cumul: lateMins ? `${lateMins} min` : 'Import CSV Nevea',
+        diagnostic,
+        badgeColor,
+      };
+    });
+  };
+
+  const handleFileSelected = async (file: File) => {
+    setFileName(file.name);
+    setFileSizeLabel(`${(file.size / 1024).toFixed(1)} Ko`);
+    const text = await file.text();
+    const rows = parseNeveaCsvText(text);
+    if (rows.length > 0) {
+      setParsedRows(rows);
+    }
+  };
+
   // Exemple de données prévisualisées pour les émargements Nevea
-  const previewAttendanceRows = [
+  const defaultDemoRows = [
     { 
       date: '10/11/2026', 
       etudiant: 'Alexandre Martin', 
@@ -70,6 +132,8 @@ export const ImportNeveaPage: React.FC = () => {
       badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300' 
     },
   ];
+
+  const previewAttendanceRows = parsedRows.length > 0 ? parsedRows : defaultDemoRows;
 
   const handleExecuteImport = async () => {
     setIsProcessing(true);
@@ -165,12 +229,29 @@ export const ImportNeveaPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="border-2 border-dashed border-slate-200 hover:border-slate-400 rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition bg-slate-50/40">
+          <label
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const f = e.dataTransfer.files?.[0];
+              if (f) handleFileSelected(f);
+            }}
+            className="block border-2 border-dashed border-slate-200 hover:border-slate-400 rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition bg-slate-50/40"
+          >
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFileSelected(f);
+              }}
+            />
             <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center mx-auto mb-3 text-slate-700">
               <Upload className="w-6 h-6 text-[#0F172A]" />
             </div>
             <p className="text-sm font-bold text-slate-900">
-              Glissez-déposez le fichier CSV exporté depuis Nevea
+              Glissez-déposez le fichier CSV exporté depuis Nevea (ou cliquez pour parcourir)
             </p>
             <p className="text-xs text-slate-400 mt-1">
               Encodage UTF-8 ou ISO-8859-1 • Séparateur virgule ou point-virgule
@@ -179,9 +260,9 @@ export const ImportNeveaPage: React.FC = () => {
             <div className="mt-5 inline-flex items-center space-x-2.5 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-mono text-slate-700 shadow-2xs">
               <FileSpreadsheet className="w-4 h-4 text-[#00D084]" />
               <span className="font-bold">{fileName}</span>
-              <span className="text-[10px] text-slate-400">(64.2 Ko)</span>
+              <span className="text-[10px] text-slate-400">({fileSizeLabel})</span>
             </div>
-          </div>
+          </label>
 
           <div className="flex items-center justify-between pt-2">
             <span className="text-xs text-slate-400">

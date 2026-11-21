@@ -679,6 +679,34 @@ export let inMemoryDb = {
       sourceType: 'aston_local',
       isReadonly: false
     }
+  ],
+  feedbacks: [
+    {
+      id: 'fb-1',
+      studentId: 'stu-01',
+      studentName: 'Alexandre Martin',
+      promotionId: '33333333-0000-0000-0000-000000000010',
+      promotionName: 'Helpline 40',
+      authorName: 'Mourad (Formateur Référent)',
+      authorRole: 'formateur',
+      sentiment: 'negative',
+      category: 'assiduite',
+      comment: 'Arrivées tardives répétées les lundis matin en semaine école. Bon niveau technique mais manque de ponctualité.',
+      createdAt: '2026-11-10T17:15:00Z'
+    },
+    {
+      id: 'fb-2',
+      studentId: 'stu-03',
+      studentName: 'Sami Belkacem',
+      promotionId: '33333333-0000-0000-0000-000000000011',
+      promotionName: 'Helpline 42',
+      authorName: 'Marc Durand (Tuteur Helpline)',
+      authorRole: 'tuteur_esn',
+      sentiment: 'positive',
+      category: 'integration_esn',
+      comment: 'Très bonne intégration sur le plateau Helpdesk N1/N2, autonome sur la prise d\'appels.',
+      createdAt: '2026-11-09T11:30:00Z'
+    }
   ]
 };
 

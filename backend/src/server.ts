@@ -884,6 +884,43 @@ server.post('/api/nevea/preview-csv', async () => {
   };
 });
 
+// --- FEEDBACKS TERRAIN (Formateurs, Tuteurs ESN, Apprenants) ---
+server.get('/api/feedbacks', async () => {
+  return inMemoryDb.feedbacks;
+});
+
+server.post('/api/feedbacks', async (request, reply) => {
+  const schema = z.object({
+    studentId: z.string().optional(),
+    studentName: z.string().optional(),
+    promotionId: z.string(),
+    promotionName: z.string().optional(),
+    authorName: z.string().min(2),
+    authorRole: z.enum(['formateur', 'tuteur_esn', 'apprenant', 'coordinateur']),
+    sentiment: z.enum(['positive', 'neutral', 'negative']),
+    category: z.enum(['assiduite', 'progression', 'integration_esn', 'posture', 'risque_rupture']),
+    comment: z.string().min(3),
+  });
+  const body = schema.parse(request.body);
+  const promo = inMemoryDb.promotions.find(p => p.id === body.promotionId);
+  const newFeedback = {
+    id: `fb-${Date.now()}`,
+    ...body,
+    promotionName: body.promotionName || promo?.name || 'Promotion Aston',
+    createdAt: new Date().toISOString(),
+  };
+  inMemoryDb.feedbacks.unshift(newFeedback);
+  return reply.status(201).send(newFeedback);
+});
+
+server.delete('/api/feedbacks/:id', async (request, reply) => {
+  const { id } = request.params as { id: string };
+  const idx = inMemoryDb.feedbacks.findIndex(f => f.id === id);
+  if (idx === -1) return reply.status(404).send({ message: 'Feedback introuvable' });
+  inMemoryDb.feedbacks.splice(idx, 1);
+  return { deleted: true, id };
+});
+
 // --- AUTHENTIFICATION & SESSIONS (FLUX OMNISTREAM + IDENTIFIANTS ASTON CAMPUS) ---
 function extractBearerToken(request: FastifyRequest): string | null {
   const authHeader = String(request.headers.authorization || '').trim();
