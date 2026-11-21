@@ -32,7 +32,7 @@ export const Header: React.FC = () => {
   const initials = `${currentUser.firstName?.[0] || ''}${currentUser.lastName?.[0] || ''}`.toUpperCase() || 'SD';
 
   return (
-    <header className="h-16 bg-white/70 backdrop-blur-xl border-b border-white/60 px-6 lg:px-8 flex items-center justify-between shrink-0 z-10 font-sans shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
+    <header className="h-16 bg-white/95 backdrop-blur-md border-b border-black/[0.06] px-6 lg:px-8 flex items-center justify-between shrink-0 z-10 font-sans">
       {/* Left: Breadcrumb & Sync Status */}
       <div className="flex items-center space-x-3.5 min-w-0">
         <div className="flex items-center space-x-2 text-xs font-medium text-slate-500">

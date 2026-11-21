@@ -48,10 +48,10 @@ export const DashboardPage: React.FC = () => {
   const totalActionsCount = actions.length;
 
   const actionStatusData = [
-    { name: 'En cours', value: inProgressCount, color: '#0F172A' },
-    { name: 'À faire', value: todoCount, color: '#00D084' },
-    { name: 'En retard', value: overdueCount, color: '#F43F5E' },
-    { name: 'Clôturées', value: completedCount, color: '#CBD5E1' },
+    { name: 'En cours', value: inProgressCount, color: '#1C1C1C' },
+    { name: 'À faire', value: todoCount, color: '#4C98FD' },
+    { name: 'En retard', value: overdueCount, color: '#FF3B30' },
+    { name: 'Clôturées', value: completedCount, color: '#71DD8C' },
   ];
 
   // Prochains rendez-vous calculés depuis les entretiens, réunions et événements
@@ -192,69 +192,69 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 4 cartes statistiques en ligne avec glassmorphism translucide */}
+      {/* 2. 4 cartes statistiques SnowUI Light (pastels sans dark mode) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Carte 1 : Promotions */}
+        {/* Carte 1 : Promotions (#E6F1FD SnowUI Sky) */}
         <div 
           onClick={() => navigate('/promotions')}
-          className="glass-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between group"
+          className="bg-[#E6F1FD] border border-black/[0.05] p-5 rounded-2xl cursor-pointer flex flex-col justify-between group transition hover:-translate-y-0.5 hover:shadow-sm"
         >
-          <div className="flex items-center justify-between text-xs text-slate-500 font-bold uppercase tracking-wider font-mono">
+          <div className="flex items-center justify-between text-xs text-[#1C1C1C]/70 font-semibold uppercase tracking-wider font-mono">
             <span>PROMOTIONS</span>
-            <div className="w-9 h-9 rounded-xl bg-slate-900/5 group-hover:bg-[#0F172A] text-slate-700 group-hover:text-white flex items-center justify-center transition-colors border border-white/80 shadow-2xs">
+            <div className="w-9 h-9 rounded-xl bg-white/80 text-[#1C1C1C] flex items-center justify-center transition-colors shadow-2xs">
               <GraduationCap className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
+            <span className="text-3xl font-semibold text-[#1C1C1C] tracking-tight font-mono">
               {activePromotionsCount}
             </span>
-            <p className="text-[11px] text-slate-400 mt-1">Cohortes actives ({promotions.length} au total)</p>
+            <p className="text-[11px] text-[#1C1C1C]/60 mt-1">Cohortes actives ({promotions.length} au total)</p>
           </div>
         </div>
 
-        {/* Carte 2 : Apprenants (+4) */}
+        {/* Carte 2 : Apprenants (#EDEEFC SnowUI Lavender) */}
         <div 
           onClick={() => navigate('/apprenants')}
-          className="glass-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between group"
+          className="bg-[#EDEEFC] border border-black/[0.05] p-5 rounded-2xl cursor-pointer flex flex-col justify-between group transition hover:-translate-y-0.5 hover:shadow-sm"
         >
-          <div className="flex items-center justify-between text-xs text-slate-500 font-bold uppercase tracking-wider font-mono">
+          <div className="flex items-center justify-between text-xs text-[#1C1C1C]/70 font-semibold uppercase tracking-wider font-mono">
             <span>APPRENANTS</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 group-hover:bg-[#00D084] text-emerald-600 group-hover:text-white flex items-center justify-center transition-colors border border-emerald-500/20 shadow-2xs">
+            <div className="w-9 h-9 rounded-xl bg-white/80 text-[#1C1C1C] flex items-center justify-center transition-colors shadow-2xs">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline space-x-2">
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
+            <span className="text-3xl font-semibold text-[#1C1C1C] tracking-tight font-mono">
               {totalStudentsCount}
             </span>
-            <span className="text-xs font-bold text-emerald-700 bg-[#00D084]/15 border border-[#00D084]/30 px-2 py-0.5 rounded-full font-mono backdrop-blur-xs">
+            <span className="text-xs font-semibold text-[#1C1C1C] bg-white/70 border border-black/[0.06] px-2 py-0.5 rounded-full font-mono">
               1 sem./3 sem.
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Alternance ESN (Helpline, XEFI...) & Initial</p>
+          <p className="text-[11px] text-[#1C1C1C]/60 mt-1">Alternance ESN (Helpline, XEFI...) & Initial</p>
         </div>
 
-        {/* Carte 3 : Formateurs Référents (Mourad, Christelle, Mehdi) */}
+        {/* Carte 3 : Formateurs Référents (#F9F9FA SnowUI Surface) */}
         <div 
           onClick={() => navigate('/promotions')}
-          className="glass-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between group"
+          className="bg-[#F9F9FA] border border-black/[0.06] p-5 rounded-2xl cursor-pointer flex flex-col justify-between group transition hover:-translate-y-0.5 hover:shadow-sm"
         >
-          <div className="flex items-center justify-between text-xs text-slate-500 font-bold uppercase tracking-wider font-mono">
+          <div className="flex items-center justify-between text-xs text-[#1C1C1C]/70 font-semibold uppercase tracking-wider font-mono">
             <span>RÉFÉRENTS OFFICIELS</span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 group-hover:bg-[#0F172A] text-indigo-600 group-hover:text-white flex items-center justify-center transition-colors border border-indigo-500/20 shadow-2xs">
+            <div className="w-9 h-9 rounded-xl bg-white text-[#1C1C1C] border border-black/[0.06] flex items-center justify-center transition-colors shadow-2xs">
               <UserCheck className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline space-x-2">
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
+            <span className="text-3xl font-semibold text-[#1C1C1C] tracking-tight font-mono">
               {leadTrainersCount}
             </span>
-            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full font-mono">
+            <span className="text-xs font-semibold text-[#1C1C1C] bg-white border border-black/[0.06] px-2 py-0.5 rounded-full font-mono">
               +{otherTrainersCount} form.
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Mourad (Helpline), Christelle, Mehdi</p>
+          <p className="text-[11px] text-[#1C1C1C]/60 mt-1">Mourad (Helpline), Christelle, Mehdi</p>
         </div>
 
         {/* Carte 4 : Alertes Assiduité Temps Réel */}

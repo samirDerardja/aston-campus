@@ -4,27 +4,28 @@
 
 @layer base {
   :root {
-    --spark-green: #00D084;
-    --spark-dark: #1E293B;
-    --spark-black: #0F172A;
-    --spark-canvas: #F8F9FA;
-    --color-luxury-dark: #0F172A;
-    --color-luxury-navy: #1E293B;
-    --color-luxury-emerald: #00D084;
-    --color-luxury-accent: #10B981;
-    --color-luxury-rose: #F43F5E;
-    --color-luxury-canvas: #F8F9FA;
-    --color-luxury-glass-border: rgba(255, 255, 255, 0.75);
+    --snow-bg: #FFFFFF;
+    --snow-surface: #F9F9FA;
+    --snow-ink: #1C1C1C;
+    --snow-ink-muted: rgba(28, 28, 28, 0.4);
+    --snow-border: rgba(28, 28, 28, 0.08);
+    --snow-lavender: #EDEEFC;
+    --snow-sky: #E6F1FD;
+    --snow-blue: #007AFF;
+    --snow-mint: #71DD8C;
+    --snow-amber: #FFCC00;
+    --snow-red: #FF3B30;
   }
 
   body {
-    background-color: #F8F9FB;
-    color: #0F172A;
+    background-color: #FFFFFF;
+    color: #1C1C1C;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   h1, h2, h3, h4, .font-display {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -32,37 +33,31 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Luxury Glassmorphism Utilities */
+/* SnowUI Light Surfaces */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.03), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  background: #F9F9FA;
+  border: 1px solid rgba(28, 28, 28, 0.07);
+  box-shadow: 0 1px 2px rgba(28, 28, 28, 0.03);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 30px -4px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02), inset 0 1px 2px 0 rgba(255, 255, 255, 0.9);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #FFFFFF;
+  border: 1px solid rgba(28, 28, 28, 0.08);
+  box-shadow: 0 2px 10px -2px rgba(28, 28, 28, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.88);
-  border-color: rgba(255, 255, 255, 1);
-  box-shadow: 0 16px 40px -6px rgba(15, 23, 42, 0.08), inset 0 1px 2px 0 rgba(255, 255, 255, 1);
-  transform: translateY(-2px);
+  background: #FFFFFF;
+  border-color: rgba(28, 28, 28, 0.14);
+  box-shadow: 0 8px 24px -4px rgba(28, 28, 28, 0.07);
+  transform: translateY(-1px);
 }
 
 .glass-pill {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  background: #F9F9FA;
+  border: 1px solid rgba(28, 28, 28, 0.08);
+  box-shadow: 0 1px 2px rgba(28, 28, 28, 0.02);
 }
 
 /* Custom scrollbars */

@@ -38,39 +38,39 @@ export const Sidebar: React.FC = () => {
   const initials = `${currentUser.firstName?.[0] || ''}${currentUser.lastName?.[0] || ''}`.toUpperCase() || 'SD';
 
   return (
-    <aside className="w-64 bg-white/70 backdrop-blur-2xl text-slate-700 flex flex-col justify-between shrink-0 select-none border-r border-white/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 font-sans h-full transition-all">
+    <aside className="w-64 bg-white text-[#1C1C1C] flex flex-col justify-between shrink-0 select-none border-r border-black/[0.06] z-20 font-sans h-full transition-all">
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* Luxury Brand Header: Aston Campus with glowing emerald/indigo chevron */}
+        {/* SnowUI Light Brand Header */}
         <div className="px-2 pt-2 pb-1 flex items-center justify-between">
           <NavLink to="/" className="flex items-center space-x-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#0F172A] via-[#1E293B] to-[#00D084] flex items-center justify-center shadow-[0_4px_14px_rgba(0,208,132,0.25)] border border-white/30 transition-transform group-hover:scale-105 duration-200">
+            <div className="w-9 h-9 rounded-xl bg-[#1C1C1C] flex items-center justify-center shadow-2xs transition-transform group-hover:scale-105 duration-200">
               <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
             <div>
-              <span className="font-extrabold text-base text-slate-900 tracking-tight block">
+              <span className="font-semibold text-base text-[#1C1C1C] tracking-tight block">
                 Aston Campus
               </span>
-              <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-600 font-mono">
+              <span className="text-[10px] font-medium tracking-wider uppercase text-black/40 font-mono">
                 PÉDAGOGIE & ADMIN
               </span>
             </div>
           </NavLink>
         </div>
 
-        {/* Navigation items with glassmorphic hover and luxury dark active pill */}
-        <nav className="space-y-1.5">
+        {/* Navigation items SnowUI Light */}
+        <nav className="space-y-1">
           {navigationItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-[#0F172A] text-white shadow-[0_4px_16px_rgba(15,23,42,0.22)]'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 hover:shadow-2xs'
+                    ? 'bg-[#1C1C1C]/[0.05] text-[#1C1C1C] font-semibold'
+                    : 'text-black/60 hover:text-[#1C1C1C] hover:bg-[#F9F9FA]'
                 }`
               }
             >
